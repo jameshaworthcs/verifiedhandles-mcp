@@ -1,0 +1,837 @@
+{
+  "tools": [
+    {
+      "name": "get_entry",
+      "title": "Get an entry",
+      "description": "One entry, by VHID, short name or Wikidata QID: its public record (title, description, handles, image, URL) and, as `editing`, what the editor would load for this key — the current revision, the editable fields, every handle with who manages it (the Wikidata sync or the site), which fields the sync manages, and whether this key may edit it live. Without an API key, the public record alone.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "include_platforms": {
+            "default": false,
+            "description": "Also list every platform a handle can be on (id, name, URL prefix). Needs an API key.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "vhid": {
+            "type": "string",
+            "pattern": "^\\d{11}$",
+            "description": "The entry’s VHID: 11 digits, permanent."
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "vhid": {
+                    "type": "string",
+                    "pattern": "^\\d{11}$",
+                    "description": "The entry’s VHID: 11 digits, permanent."
+                  },
+                  "short": {
+                    "description": "The entry’s short name (`/<short>`), if it has one.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "subtitle": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "entity_type": {
+                    "description": "What it is, from its Wikidata item: `person`, `organization` or `brand`; null when unknown. `entity_kind` says more.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "entity_kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "person",
+                          "musical_group",
+                          "sports_organization",
+                          "broadcaster",
+                          "publisher",
+                          "educational_institution",
+                          "research_organization",
+                          "religious_organization",
+                          "museum",
+                          "financial_institution",
+                          "chain",
+                          "nonprofit",
+                          "company",
+                          "organization",
+                          "website",
+                          "brand"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `website` (brand: website or app), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                  },
+                  "verified": {
+                    "type": "boolean",
+                    "description": "Verified Handles has verified the entry."
+                  },
+                  "description": {
+                    "description": "The description as sanitised HTML, links to other entries named as they are today.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "description_source": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "description": "The source’s kind (`wikipedia`)."
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "The page’s title, underscored (`Draft:` first for a draft)."
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "The page."
+                          },
+                          "adapted": {
+                            "description": "Present and true when the text has been edited on the site since.",
+                            "type": "boolean"
+                          },
+                          "revision": {
+                            "description": "The page’s revision the text was taken from: its permalink is `https://en.wikipedia.org/w/index.php?title=<title>&oldid=<revision>`. Absent on a credit from before revisions were kept.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "draft": {
+                            "description": "Present and true when the page is an English Wikipedia draft (the Draft namespace), not yet an article.",
+                            "type": "boolean",
+                            "const": true
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "title",
+                          "url"
+                        ],
+                        "additionalProperties": {},
+                        "description": "The English Wikipedia page an entry’s description was taken from: an article, or a draft (`draft: true`)."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description_license": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "CC-BY-SA-4.0"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The description’s licence, as an SPDX id: `CC-BY-SA-4.0` when it was taken from Wikipedia (`description_source` is set), which means crediting the article and sharing alike. Null otherwise: the description is CC0 like the rest of the text."
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "The entry’s canonical page."
+                  },
+                  "image": {
+                    "description": "The lead image (the same as `images[0].url`), or null.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "image_rights": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "wikimedia_commons",
+                              "upload"
+                            ],
+                            "description": "Where the image came from."
+                          },
+                          "license": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "cc0-1.0",
+                                  "public-domain",
+                                  "cc-by-4.0",
+                                  "cc-by-sa-4.0",
+                                  "supplied",
+                                  "permission",
+                                  "none"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "An upload’s licence, by id. Null for a Commons image (see `license_name`) or when none was recorded."
+                          },
+                          "license_name": {
+                            "description": "The licence’s name, e.g. \"CC BY-SA 4.0\". Null until it is known.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "license_url": {
+                            "description": "The licence’s text.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "freely_licensed": {
+                            "description": "May be reused under a free licence. Null when no licence is recorded.",
+                            "type": [
+                              "boolean",
+                              "null"
+                            ]
+                          },
+                          "credit": {
+                            "description": "The credit line to show when reusing the image.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "source_page": {
+                            "description": "The image’s Wikimedia Commons file page, which states its licence and author.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "details_url": {
+                            "type": "string",
+                            "description": "The entry’s \"About this image\" page."
+                          }
+                        },
+                        "required": [
+                          "source",
+                          "license",
+                          "license_name",
+                          "license_url",
+                          "freely_licensed",
+                          "credit",
+                          "source_page",
+                          "details_url"
+                        ],
+                        "additionalProperties": {},
+                        "description": "Who owns an image and how it may be reused. An entry’s text is CC0 (bar a description taken from Wikipedia); its images are licensed separately, by their owners."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The lead image’s rights, or null when there is no image."
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "description": "The image, as a path on this site (`/img/w/480/<id>`)."
+                        },
+                        "main": {
+                          "type": "boolean",
+                          "description": "True for the lead image, false for the gallery images after it."
+                        },
+                        "image_rights": {
+                          "type": "object",
+                          "properties": {
+                            "source": {
+                              "type": "string",
+                              "enum": [
+                                "wikimedia_commons",
+                                "upload"
+                              ],
+                              "description": "Where the image came from."
+                            },
+                            "license": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "cc0-1.0",
+                                    "public-domain",
+                                    "cc-by-4.0",
+                                    "cc-by-sa-4.0",
+                                    "supplied",
+                                    "permission",
+                                    "none"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "An upload’s licence, by id. Null for a Commons image (see `license_name`) or when none was recorded."
+                            },
+                            "license_name": {
+                              "description": "The licence’s name, e.g. \"CC BY-SA 4.0\". Null until it is known.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "license_url": {
+                              "description": "The licence’s text.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "freely_licensed": {
+                              "description": "May be reused under a free licence. Null when no licence is recorded.",
+                              "type": [
+                                "boolean",
+                                "null"
+                              ]
+                            },
+                            "credit": {
+                              "description": "The credit line to show when reusing the image.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "source_page": {
+                              "description": "The image’s Wikimedia Commons file page, which states its licence and author.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "details_url": {
+                              "type": "string",
+                              "description": "The entry’s \"About this image\" page."
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "license",
+                            "license_name",
+                            "license_url",
+                            "freely_licensed",
+                            "credit",
+                            "source_page",
+                            "details_url"
+                          ],
+                          "additionalProperties": {},
+                          "description": "Who owns an image and how it may be reused. An entry’s text is CC0 (bar a description taken from Wikipedia); its images are licensed separately, by their owners."
+                        },
+                        "link": {
+                          "description": "Where the image links on the entry page instead of opening the full-screen viewer, or null.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "url",
+                        "main",
+                        "image_rights",
+                        "link"
+                      ],
+                      "additionalProperties": {},
+                      "description": "One image an entry shows."
+                    },
+                    "description": "Every image the entry shows, the lead first. Empty when it shows none."
+                  },
+                  "handles": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "platform": {
+                          "type": "string",
+                          "description": "The platform’s id (`twitter`, `instagram`, `wikidata`, …)."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "The platform’s display name."
+                        },
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "social",
+                            "messaging",
+                            "website",
+                            "identifier"
+                          ],
+                          "description": "How the entry page groups it."
+                        },
+                        "value": {
+                          "description": "The handle as stored (a username, an id, a URL). Null for an email address, which is never published as data.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "display": {
+                          "description": "The label the entry page shows instead of the value, if an editor set one. Null for email.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "url": {
+                          "description": "The profile’s address, built from the platform’s URL pattern. Null for email.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "verified": {
+                          "type": "boolean",
+                          "description": "Verified Handles has checked that this account belongs to the entry."
+                        }
+                      },
+                      "required": [
+                        "platform",
+                        "name",
+                        "category",
+                        "value",
+                        "display",
+                        "url",
+                        "verified"
+                      ],
+                      "additionalProperties": {},
+                      "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
+                    }
+                  }
+                },
+                "required": [
+                  "vhid",
+                  "short",
+                  "title",
+                  "subtitle",
+                  "entity_type",
+                  "entity_kind",
+                  "verified",
+                  "description",
+                  "description_source",
+                  "description_license",
+                  "url",
+                  "image",
+                  "image_rights",
+                  "images",
+                  "handles"
+                ],
+                "additionalProperties": {},
+                "description": "An entry: the same data its page shows, from the same code. Email addresses are masked. The text is CC0, except a description taken from Wikipedia (`description_license`)."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The entry’s public record, as GET /api/v1/entities/{vhid} answers it. Null for a VHID that is not public (a deleted entry): `editing` says more."
+          },
+          "editing": {
+            "description": "With an API key: what the editor loads for this key (GET /api/editor/{vhid}): `baseRevisionId`, `capabilities` (whether it may edit live or propose), `editable`, `handles`, `provenance` (which fields the Wikidata sync manages), `qid`, and `platforms` with include_platforms. Where the key may not open the editor, the route’s `status` and `error`. Absent with no key.",
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "vhid",
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "One entry: its public record and, with an API key, what the editor would load for it."
+      },
+      "annotations": {
+        "title": "Get an entry",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "search_entries",
+      "title": "Search entries",
+      "description": "Search the entries as the site search does: words match titles, subtitles and descriptions; a Wikidata QID finds the entries linked to it; a VHID finds that entry and the entries that link to it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The query as it was read: trimmed and cut to 100 characters."
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "How many entries matched in all."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "The page size used: the `limit` asked for, clamped to the endpoint’s range."
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "The offset used: the `offset` asked for, clamped to 0–10,000."
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The `offset` of the next page, or null when this is the last one. Follow it rather than computing it."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "vhid": {
+                  "type": "string",
+                  "pattern": "^\\d{11}$",
+                  "description": "The entry’s VHID: 11 digits, permanent."
+                },
+                "short": {
+                  "description": "The entry’s short name (`/<short>`), if it has one.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "subtitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "verified": {
+                  "type": "boolean"
+                },
+                "snippet": {
+                  "description": "Plain text from the description around the words that matched, or null when the match was not in it.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "highlighted": {
+                  "type": "boolean",
+                  "description": "`snippet` is a real excerpt (true), or there is none (false)."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The entry’s page."
+                }
+              },
+              "required": [
+                "vhid",
+                "short",
+                "title",
+                "subtitle",
+                "verified",
+                "snippet",
+                "highlighted",
+                "url"
+              ],
+              "additionalProperties": {},
+              "description": "One entry that matched."
+            },
+            "description": "Best match first."
+          }
+        },
+        "required": [
+          "query",
+          "total",
+          "results"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Search entries",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_entry_history",
+      "title": "Entry history",
+      "description": "An entry’s public edit history, newest first (`next_offset` pages on). A merged entry’s key gives its own history.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "limit": {
+            "default": 50,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "vhid": {
+            "type": "string",
+            "pattern": "^\\d{11}$",
+            "description": "The entry’s VHID: 11 digits, permanent."
+          },
+          "merged_into": {
+            "description": "Present when the entry was merged into another: that entry’s VHID. The history is still the merged entry’s own.",
+            "type": "string",
+            "pattern": "^\\d{11}$"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "The page size used: the `limit` asked for, clamped to the endpoint’s range."
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "The offset used: the `offset` asked for, clamped to 0–10,000."
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The `offset` of the next page, or null when this is the last one. Follow it rather than computing it."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ref_id": {
+                  "type": "string",
+                  "pattern": "^[ar]\\d+$",
+                  "description": "The revision’s id: `a<n>` for the history kept from the old wiki, `r<n>` for an edit made since."
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "archive",
+                    "forward"
+                  ],
+                  "description": "`archive`: from the old wiki. `forward`: made on Verified Handles."
+                },
+                "ts": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "When it was made."
+                },
+                "actor": {
+                  "description": "Who made it, as they chose to be named in public; null when they keep their name private.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "summary": {
+                  "description": "The edit summary.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "is_bot": {
+                  "description": "Made by an automated process (the Wikidata sync, an import).",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "import",
+                    "mediawiki",
+                    "sync",
+                    "admin",
+                    "trusted",
+                    "submission",
+                    "claim"
+                  ],
+                  "description": "How the edit was made."
+                },
+                "hidden": {
+                  "type": "boolean",
+                  "const": false,
+                  "description": "Always false here: a hidden revision is never in the public history."
+                },
+                "deleted": {
+                  "type": "boolean",
+                  "const": false,
+                  "description": "Always false here: a deleted revision is never in the public history."
+                },
+                "proposer": {
+                  "description": "For an approved proposal, who proposed it, as they chose to be named; null otherwise.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "ref_id",
+                "kind",
+                "ts",
+                "actor",
+                "summary",
+                "is_bot",
+                "source",
+                "hidden",
+                "deleted",
+                "proposer"
+              ],
+              "additionalProperties": {},
+              "description": "One revision in an entry’s public history."
+            },
+            "description": "Newest first."
+          }
+        },
+        "required": [
+          "vhid",
+          "limit",
+          "offset",
+          "next_offset",
+          "history"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A page of an entry’s public revision history, newest first."
+      },
+      "annotations": {
+        "title": "Entry history",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ]
+}

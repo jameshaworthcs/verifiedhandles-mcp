@@ -1,0 +1,2584 @@
+{
+  "tools": [
+    {
+      "name": "get_entry",
+      "title": "Get an entry",
+      "description": "One entry, by VHID, short name or Wikidata QID: its public record (title, description, handles, image, URL) and, as `editing`, what the editor would load for this key — the current revision, the editable fields, every handle with who manages it (the Wikidata sync or the site), which fields the sync manages, and whether this key may edit it live. Without an API key, the public record alone.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "include_platforms": {
+            "default": false,
+            "description": "Also list every platform a handle can be on (id, name, URL prefix). Needs an API key.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "vhid": {
+            "type": "string",
+            "pattern": "^\\d{11}$",
+            "description": "The entry’s VHID: 11 digits, permanent."
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "vhid": {
+                    "type": "string",
+                    "pattern": "^\\d{11}$",
+                    "description": "The entry’s VHID: 11 digits, permanent."
+                  },
+                  "short": {
+                    "description": "The entry’s short name (`/<short>`), if it has one.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "subtitle": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "entity_type": {
+                    "description": "What it is, from its Wikidata item: `person`, `organization` or `brand`; null when unknown. `entity_kind` says more.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "entity_kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "person",
+                          "musical_group",
+                          "sports_organization",
+                          "broadcaster",
+                          "publisher",
+                          "educational_institution",
+                          "research_organization",
+                          "religious_organization",
+                          "museum",
+                          "financial_institution",
+                          "chain",
+                          "nonprofit",
+                          "company",
+                          "organization",
+                          "website",
+                          "brand"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `website` (brand: website or app), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                  },
+                  "verified": {
+                    "type": "boolean",
+                    "description": "Verified Handles has verified the entry."
+                  },
+                  "description": {
+                    "description": "The description as sanitised HTML, links to other entries named as they are today.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "description_source": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "description": "The source’s kind (`wikipedia`)."
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "The page’s title, underscored (`Draft:` first for a draft)."
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "The page."
+                          },
+                          "adapted": {
+                            "description": "Present and true when the text has been edited on the site since.",
+                            "type": "boolean"
+                          },
+                          "revision": {
+                            "description": "The page’s revision the text was taken from: its permalink is `https://en.wikipedia.org/w/index.php?title=<title>&oldid=<revision>`. Absent on a credit from before revisions were kept.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "draft": {
+                            "description": "Present and true when the page is an English Wikipedia draft (the Draft namespace), not yet an article.",
+                            "type": "boolean",
+                            "const": true
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "title",
+                          "url"
+                        ],
+                        "additionalProperties": {},
+                        "description": "The English Wikipedia page an entry’s description was taken from: an article, or a draft (`draft: true`)."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description_license": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "CC-BY-SA-4.0"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The description’s licence, as an SPDX id: `CC-BY-SA-4.0` when it was taken from Wikipedia (`description_source` is set), which means crediting the article and sharing alike. Null otherwise: the description is CC0 like the rest of the text."
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "The entry’s canonical page."
+                  },
+                  "image": {
+                    "description": "The lead image (the same as `images[0].url`), or null.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "image_rights": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "wikimedia_commons",
+                              "upload"
+                            ],
+                            "description": "Where the image came from."
+                          },
+                          "license": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "cc0-1.0",
+                                  "public-domain",
+                                  "cc-by-4.0",
+                                  "cc-by-sa-4.0",
+                                  "supplied",
+                                  "permission",
+                                  "none"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "An upload’s licence, by id. Null for a Commons image (see `license_name`) or when none was recorded."
+                          },
+                          "license_name": {
+                            "description": "The licence’s name, e.g. \"CC BY-SA 4.0\". Null until it is known.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "license_url": {
+                            "description": "The licence’s text.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "freely_licensed": {
+                            "description": "May be reused under a free licence. Null when no licence is recorded.",
+                            "type": [
+                              "boolean",
+                              "null"
+                            ]
+                          },
+                          "credit": {
+                            "description": "The credit line to show when reusing the image.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "source_page": {
+                            "description": "The image’s Wikimedia Commons file page, which states its licence and author.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "details_url": {
+                            "type": "string",
+                            "description": "The entry’s \"About this image\" page."
+                          }
+                        },
+                        "required": [
+                          "source",
+                          "license",
+                          "license_name",
+                          "license_url",
+                          "freely_licensed",
+                          "credit",
+                          "source_page",
+                          "details_url"
+                        ],
+                        "additionalProperties": {},
+                        "description": "Who owns an image and how it may be reused. An entry’s text is CC0 (bar a description taken from Wikipedia); its images are licensed separately, by their owners."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The lead image’s rights, or null when there is no image."
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "description": "The image, as a path on this site (`/img/w/480/<id>`)."
+                        },
+                        "main": {
+                          "type": "boolean",
+                          "description": "True for the lead image, false for the gallery images after it."
+                        },
+                        "image_rights": {
+                          "type": "object",
+                          "properties": {
+                            "source": {
+                              "type": "string",
+                              "enum": [
+                                "wikimedia_commons",
+                                "upload"
+                              ],
+                              "description": "Where the image came from."
+                            },
+                            "license": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "cc0-1.0",
+                                    "public-domain",
+                                    "cc-by-4.0",
+                                    "cc-by-sa-4.0",
+                                    "supplied",
+                                    "permission",
+                                    "none"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "An upload’s licence, by id. Null for a Commons image (see `license_name`) or when none was recorded."
+                            },
+                            "license_name": {
+                              "description": "The licence’s name, e.g. \"CC BY-SA 4.0\". Null until it is known.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "license_url": {
+                              "description": "The licence’s text.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "freely_licensed": {
+                              "description": "May be reused under a free licence. Null when no licence is recorded.",
+                              "type": [
+                                "boolean",
+                                "null"
+                              ]
+                            },
+                            "credit": {
+                              "description": "The credit line to show when reusing the image.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "source_page": {
+                              "description": "The image’s Wikimedia Commons file page, which states its licence and author.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "details_url": {
+                              "type": "string",
+                              "description": "The entry’s \"About this image\" page."
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "license",
+                            "license_name",
+                            "license_url",
+                            "freely_licensed",
+                            "credit",
+                            "source_page",
+                            "details_url"
+                          ],
+                          "additionalProperties": {},
+                          "description": "Who owns an image and how it may be reused. An entry’s text is CC0 (bar a description taken from Wikipedia); its images are licensed separately, by their owners."
+                        },
+                        "link": {
+                          "description": "Where the image links on the entry page instead of opening the full-screen viewer, or null.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "url",
+                        "main",
+                        "image_rights",
+                        "link"
+                      ],
+                      "additionalProperties": {},
+                      "description": "One image an entry shows."
+                    },
+                    "description": "Every image the entry shows, the lead first. Empty when it shows none."
+                  },
+                  "handles": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "platform": {
+                          "type": "string",
+                          "description": "The platform’s id (`twitter`, `instagram`, `wikidata`, …)."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "The platform’s display name."
+                        },
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "social",
+                            "messaging",
+                            "website",
+                            "identifier"
+                          ],
+                          "description": "How the entry page groups it."
+                        },
+                        "value": {
+                          "description": "The handle as stored (a username, an id, a URL). Null for an email address, which is never published as data.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "display": {
+                          "description": "The label the entry page shows instead of the value, if an editor set one. Null for email.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "url": {
+                          "description": "The profile’s address, built from the platform’s URL pattern. Null for email.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "verified": {
+                          "type": "boolean",
+                          "description": "Verified Handles has checked that this account belongs to the entry."
+                        }
+                      },
+                      "required": [
+                        "platform",
+                        "name",
+                        "category",
+                        "value",
+                        "display",
+                        "url",
+                        "verified"
+                      ],
+                      "additionalProperties": {},
+                      "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
+                    }
+                  }
+                },
+                "required": [
+                  "vhid",
+                  "short",
+                  "title",
+                  "subtitle",
+                  "entity_type",
+                  "entity_kind",
+                  "verified",
+                  "description",
+                  "description_source",
+                  "description_license",
+                  "url",
+                  "image",
+                  "image_rights",
+                  "images",
+                  "handles"
+                ],
+                "additionalProperties": {},
+                "description": "An entry: the same data its page shows, from the same code. Email addresses are masked. The text is CC0, except a description taken from Wikipedia (`description_license`)."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The entry’s public record, as GET /api/v1/entities/{vhid} answers it. Null for a VHID that is not public (a deleted entry): `editing` says more."
+          },
+          "editing": {
+            "description": "With an API key: what the editor loads for this key (GET /api/editor/{vhid}): `baseRevisionId`, `capabilities` (whether it may edit live or propose), `editable`, `handles`, `provenance` (which fields the Wikidata sync manages), `qid`, and `platforms` with include_platforms. Where the key may not open the editor, the route’s `status` and `error`. Absent with no key.",
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "vhid",
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "One entry: its public record and, with an API key, what the editor would load for it."
+      },
+      "annotations": {
+        "title": "Get an entry",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "search_entries",
+      "title": "Search entries",
+      "description": "Search the entries as the site search does: words match titles, subtitles and descriptions; a Wikidata QID finds the entries linked to it; a VHID finds that entry and the entries that link to it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The query as it was read: trimmed and cut to 100 characters."
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "How many entries matched in all."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "The page size used: the `limit` asked for, clamped to the endpoint’s range."
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "The offset used: the `offset` asked for, clamped to 0–10,000."
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The `offset` of the next page, or null when this is the last one. Follow it rather than computing it."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "vhid": {
+                  "type": "string",
+                  "pattern": "^\\d{11}$",
+                  "description": "The entry’s VHID: 11 digits, permanent."
+                },
+                "short": {
+                  "description": "The entry’s short name (`/<short>`), if it has one.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "subtitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "verified": {
+                  "type": "boolean"
+                },
+                "snippet": {
+                  "description": "Plain text from the description around the words that matched, or null when the match was not in it.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "highlighted": {
+                  "type": "boolean",
+                  "description": "`snippet` is a real excerpt (true), or there is none (false)."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The entry’s page."
+                }
+              },
+              "required": [
+                "vhid",
+                "short",
+                "title",
+                "subtitle",
+                "verified",
+                "snippet",
+                "highlighted",
+                "url"
+              ],
+              "additionalProperties": {},
+              "description": "One entry that matched."
+            },
+            "description": "Best match first."
+          }
+        },
+        "required": [
+          "query",
+          "total",
+          "results"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {}
+      },
+      "annotations": {
+        "title": "Search entries",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_entry_history",
+      "title": "Entry history",
+      "description": "An entry’s public edit history, newest first (`next_offset` pages on). A merged entry’s key gives its own history.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "limit": {
+            "default": 50,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "vhid": {
+            "type": "string",
+            "pattern": "^\\d{11}$",
+            "description": "The entry’s VHID: 11 digits, permanent."
+          },
+          "merged_into": {
+            "description": "Present when the entry was merged into another: that entry’s VHID. The history is still the merged entry’s own.",
+            "type": "string",
+            "pattern": "^\\d{11}$"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "The page size used: the `limit` asked for, clamped to the endpoint’s range."
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "The offset used: the `offset` asked for, clamped to 0–10,000."
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The `offset` of the next page, or null when this is the last one. Follow it rather than computing it."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ref_id": {
+                  "type": "string",
+                  "pattern": "^[ar]\\d+$",
+                  "description": "The revision’s id: `a<n>` for the history kept from the old wiki, `r<n>` for an edit made since."
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "archive",
+                    "forward"
+                  ],
+                  "description": "`archive`: from the old wiki. `forward`: made on Verified Handles."
+                },
+                "ts": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "When it was made."
+                },
+                "actor": {
+                  "description": "Who made it, as they chose to be named in public; null when they keep their name private.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "summary": {
+                  "description": "The edit summary.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "is_bot": {
+                  "description": "Made by an automated process (the Wikidata sync, an import).",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "import",
+                    "mediawiki",
+                    "sync",
+                    "admin",
+                    "trusted",
+                    "submission",
+                    "claim"
+                  ],
+                  "description": "How the edit was made."
+                },
+                "hidden": {
+                  "type": "boolean",
+                  "const": false,
+                  "description": "Always false here: a hidden revision is never in the public history."
+                },
+                "deleted": {
+                  "type": "boolean",
+                  "const": false,
+                  "description": "Always false here: a deleted revision is never in the public history."
+                },
+                "proposer": {
+                  "description": "For an approved proposal, who proposed it, as they chose to be named; null otherwise.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "ref_id",
+                "kind",
+                "ts",
+                "actor",
+                "summary",
+                "is_bot",
+                "source",
+                "hidden",
+                "deleted",
+                "proposer"
+              ],
+              "additionalProperties": {},
+              "description": "One revision in an entry’s public history."
+            },
+            "description": "Newest first."
+          }
+        },
+        "required": [
+          "vhid",
+          "limit",
+          "offset",
+          "next_offset",
+          "history"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A page of an entry’s public revision history, newest first."
+      },
+      "annotations": {
+        "title": "Entry history",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "search_commons_images",
+      "title": "Search Wikimedia Commons",
+      "description": "Search Wikimedia Commons for an image to put on an entry, as the editor’s image picker does. An exact file name finds that file first, even one uploaded minutes ago. Each hit has a `token`: pass it to set_entry_image as `commons_token`.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "What the route behind the tool answers, as JSON."
+      },
+      "annotations": {
+        "title": "Search Wikimedia Commons",
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "update_entry_fields",
+      "title": "Edit an entry’s text",
+      "description": "Change an entry’s title, subtitle, description or short name, or remove its “from Wikipedia” credit or name the Wikipedia page it came from — a live edit, as the editor saves one: a new revision, audited. Give only what changes; null clears a field. The description is HTML (sanitised on save). A field you change here is no longer managed by the Wikidata sync. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 65536
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "short": {
+            "description": "The short name in the entry’s URL; null removes it (the VHID URL stays).",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remove_wikipedia_credit": {
+            "description": "true: remove the “from Wikipedia” credit from the description.",
+            "type": "boolean"
+          },
+          "credit_wikipedia_page": {
+            "description": "Credit the description “from Wikipedia”: an English Wikipedia article or draft, by title (\"Draft:Dominic McLaughlin\") or address. The server reads the page (redirects followed) and refuses it unless at least half of the description’s three-word phrases are the page’s lead (credit_text_differs, with the share).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "credit_let_wikidata_manage": {
+            "description": "With a draft named in credit_wikipedia_page: false keeps the description site-authored. By default a draft’s credit hands the description to the Wikidata sync, which leaves it alone until the draft is an article linked from the entry’s Wikidata item.",
+            "type": "boolean"
+          },
+          "summary": {
+            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "base_revision_id": {
+            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Edit an entry’s text",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "update_entry_handles",
+      "title": "Add or remove handles",
+      "description": "Add handles to an entry or remove them — a live edit, as the editor saves one (the whole list is sent, in the entry’s order, with yours added at the end). A handle you remove that the Wikidata sync supplied is held back so the sync does not bring it back. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "add": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                },
+                "display": {
+                  "description": "Text to show instead of the value.",
+                  "type": "string",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "remove": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "summary": {
+            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "base_revision_id": {
+            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Add or remove handles",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "set_wikidata_ownership",
+      "title": "Hand fields or handles to Wikidata, or take them back",
+      "description": "Say who manages an entry’s fields and handles. relinquish_* hands them to the Wikidata sync (the next sync refreshes them, and a relinquish queues one); takeover_* takes them back, so the sync leaves them alone. release_held_handles lets the sync add back handles that were held back after a removal. A live edit, audited. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "relinquish_fields": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "title",
+                "subtitle",
+                "description",
+                "image",
+                "entity_type"
+              ]
+            }
+          },
+          "takeover_fields": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "title",
+                "subtitle",
+                "description",
+                "image",
+                "entity_type"
+              ]
+            }
+          },
+          "relinquish_handles": {
+            "description": "Only while Wikidata lists the value.",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "takeover_handles": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "release_held_handles": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "summary": {
+            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "base_revision_id": {
+            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Hand fields or handles to Wikidata, or take them back",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "set_entry_image",
+      "title": "Set or clear an entry’s image",
+      "description": "Put an image on an entry — one already on the site (`media_id`, from media_catalog or get_entry) or a Wikimedia Commons file (`commons_token`, from search_commons_images) — or take the image off (`clear: true`). A new image starts with no link; `link` sets the address the image opens on the entry page instead of the full-screen viewer (`\"\"` clears it), which needs Link images. A live edit, audited. Setting the image yourself takes it from the Wikidata sync. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "media_id": {
+            "type": "string",
+            "pattern": "^[0-9]{1,18}$"
+          },
+          "commons_token": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "clear": {
+            "type": "boolean"
+          },
+          "link": {
+            "description": "An absolute https:// (or http://) address the image links to instead of opening the full-screen viewer; \"\" for no link. Needs Link images.",
+            "type": "string",
+            "maxLength": 2048
+          },
+          "summary": {
+            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "base_revision_id": {
+            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Set or clear an entry’s image",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "set_entry_gallery",
+      "title": "Set an entry’s gallery",
+      "description": "Set the images an entry shows after its lead image: the whole ordered list of media ids (from media_catalog or get_entry), replacing the gallery; [] empties it. At most 5 (6 images in all with the lead), each once, never the lead itself (set_entry_image sets that). An image taken off loses its link; `links` sets or clears the link of an image in the list (needs Link images). A live edit, audited. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "media_ids": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9]{1,18}$"
+            }
+          },
+          "links": {
+            "description": "media id → the address that image links to on the entry page instead of the full-screen viewer; \"\" clears it. Images not named keep theirs. Needs Link images.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[0-9]{1,18}$"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "summary": {
+            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "base_revision_id": {
+            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry",
+          "media_ids"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Set an entry’s gallery",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "propose_entry_revert",
+      "title": "Propose putting an entry back to an earlier revision",
+      "description": "Propose, for a reviewer to decide, putting an entry back as it was at one of its revisions (get_entry_history: a `ref_id` like \"r123\"; imported legacy revisions cannot be put back). The proposal holds only what differs from now — title, subtitle, description, short name, handles and their order, lead image, gallery — as propose_entry_change would send it; who manages each value (Wikidata or the site) is left as it is. An image withdrawn since is left out, and the answer names it. Refused (nothing_to_change) when the entry already matches that revision. `note` tells the reviewer why. Audited. Dry run by default.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "revision": {
+            "type": "string",
+            "pattern": "^r[0-9]+$",
+            "description": "The revision’s ref_id, e.g. \"r123\"."
+          },
+          "note": {
+            "description": "Why you propose this, in plain words: posted as the proposal’s first comment, which the reviewer reads with it. At most 2,000 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry",
+          "revision"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Propose putting an entry back to an earlier revision",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "propose_entry_change",
+      "title": "Propose a change to an entry",
+      "description": "Propose a change for a reviewer to decide — for any entry you may propose to, including ones you could edit live; nothing changes until a person approves it. Give only what changes; null clears a field. `qid` proposes linking the entry to a Wikidata item, or a different one (null: unlink it), with `adopt` naming the fields the item may manage (left out: the server’s default on a first link, unchanged on a re-point); only a reviewer with Manage entries may approve that. `note` tells the reviewer why. Audited. Dry run by default: it names the entries already on the item.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 65536
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "short": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remove_wikipedia_credit": {
+            "description": "true: remove the “from Wikipedia” credit from the description.",
+            "type": "boolean"
+          },
+          "credit_wikipedia_page": {
+            "description": "Credit the description “from Wikipedia”: an English Wikipedia article or draft, by title (\"Draft:Dominic McLaughlin\") or address. The server reads the page (redirects followed) and refuses it unless at least half of the description’s three-word phrases are the page’s lead (credit_text_differs, with the share).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "credit_let_wikidata_manage": {
+            "description": "With a draft named in credit_wikipedia_page: false keeps the description site-authored. By default a draft’s credit hands the description to the Wikidata sync, which leaves it alone until the draft is an article linked from the entry’s Wikidata item.",
+            "type": "boolean"
+          },
+          "add_handles": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                },
+                "display": {
+                  "type": "string",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "remove_handles": {
+            "description": "Handles to take off, each by its value — or, for an email this key may not see (value null in get_entry’s editing.handles), by {platform_id: \"email\", ref}.",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "platform_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                    },
+                    "value": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The handle as stored, e.g. \"nasa\"."
+                    }
+                  },
+                  "required": [
+                    "platform_id",
+                    "value"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "platform_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The masked handle’s platform: \"email\"."
+                    },
+                    "ref": {
+                      "type": "string",
+                      "pattern": "^[0-9]{1,18}$",
+                      "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                    }
+                  },
+                  "required": [
+                    "platform_id",
+                    "ref"
+                  ]
+                }
+              ]
+            }
+          },
+          "handle_order": {
+            "description": "Every handle, in the order the entry should show them: exactly the entry’s handles after add_handles and remove_handles, each once (a masked email by its ref).",
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "platform_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                    },
+                    "value": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The handle as stored, e.g. \"nasa\"."
+                    }
+                  },
+                  "required": [
+                    "platform_id",
+                    "value"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "platform_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The masked handle’s platform: \"email\"."
+                    },
+                    "ref": {
+                      "type": "string",
+                      "pattern": "^[0-9]{1,18}$",
+                      "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                    }
+                  },
+                  "required": [
+                    "platform_id",
+                    "ref"
+                  ]
+                }
+              ]
+            }
+          },
+          "image_media_id": {
+            "description": "A new lead image already on the site (media_catalog, get_entry).",
+            "type": "string",
+            "pattern": "^[0-9]{1,18}$"
+          },
+          "image_commons_token": {
+            "description": "A new lead image from Wikimedia Commons: a hit’s `token` from search_commons_images. The file is recorded on the site first, as the editor’s picker does.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "clear_image": {
+            "description": "true: take the lead image off. At most one of image_media_id, image_commons_token and clear_image.",
+            "type": "boolean"
+          },
+          "gallery": {
+            "description": "The images after the lead: the whole ordered list of media ids, replacing the gallery; [] empties it. At most 5, each once, never the lead.",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9]{1,18}$"
+            }
+          },
+          "relinquish_fields": {
+            "description": "Fields to hand to the Wikidata sync.",
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "title",
+                "subtitle",
+                "description",
+                "image",
+                "entity_type"
+              ]
+            }
+          },
+          "takeover_fields": {
+            "description": "Fields to take back from the Wikidata sync, keeping their values.",
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "title",
+                "subtitle",
+                "description",
+                "image",
+                "entity_type"
+              ]
+            }
+          },
+          "relinquish_handles": {
+            "description": "Handles to hand to the Wikidata sync; only while Wikidata lists the value.",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "takeover_handles": {
+            "description": "Handles to take back from the Wikidata sync.",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "release_held_handles": {
+            "description": "Held-back handles the sync may add back.",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "qid": {
+            "description": "The Wikidata item to link the entry to, e.g. \"Q42\" (a different one re-points it); null unlinks it.",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[Qq][1-9][0-9]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "adopt": {
+            "description": "With qid: the fields the item may manage; the rest are taken back by the site.",
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "title",
+                "subtitle",
+                "description",
+                "image",
+                "entity_type"
+              ]
+            }
+          },
+          "base_revision_id": {
+            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "note": {
+            "description": "Why you propose this, in plain words: posted as the proposal’s first comment, which the reviewer reads with it. At most 2,000 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Propose a change to an entry",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "propose_new_entry",
+      "title": "Propose a new entry",
+      "description": "Propose a new entry for a reviewer to decide: it waits in Console → Applications under Quick proposals (list_applications with tab \"proposals\") and becomes live when approved. Refused (not_accepting) while Settings pauses new-entry requests, unless this account may create entries itself. For someone or something with no Wikidata item, leave out qid. With qid, the entry is linked to that item, and after approval Wikidata keeps up to date whatever you did not write (and any field in let_wikidata_manage). Refused, naming the entry, when one is already on the item. A merged-away QID is refused (409 qid_merged), naming the item Wikidata kept in wikidata_item: propose on that one. Sending the same proposal again within 15 minutes answers with the first one. `note` tells the reviewer why. Audited. Dry run by default: it names the entries already on the item, a short name already taken, and handles already on another entry.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "subtitle": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "description": {
+            "description": "HTML; it is sanitised when stored.",
+            "type": "string",
+            "maxLength": 65536
+          },
+          "short": {
+            "description": "The short name, as in verifiedhandles.org/<short>. Whether it is free is checked when the proposal is approved.",
+            "type": "string",
+            "maxLength": 100
+          },
+          "handles": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The handle as stored, e.g. \"nasa\"."
+                },
+                "display": {
+                  "type": "string",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "platform_id",
+                "value"
+              ]
+            }
+          },
+          "qid": {
+            "description": "The Wikidata item, e.g. \"Q42\". Leave it out for an entry with no item.",
+            "type": "string",
+            "pattern": "^[Qq][1-9][0-9]*$"
+          },
+          "let_wikidata_manage": {
+            "description": "With qid: fields you give that Wikidata should keep up to date after approval, as the console form does for a title it prefilled and you left as it was.",
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "title",
+                "subtitle",
+                "description"
+              ]
+            }
+          },
+          "note": {
+            "description": "Why you propose this, in plain words: posted as the proposal’s first comment, which the reviewer reads with it. At most 2,000 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Propose a new entry",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "report_entry",
+      "title": "Report an entry",
+      "description": "Report an entry to the Verified Handles team, as its page’s “Report” form does: for a person to decide: delete, merge, image rights, wrong information. Reason `image` names the image it is about (media_id, one of the images the entry shows) and needs a note saying who owns it and what should change. Reason `image_link` is about where an image links (only for an image with a link — get_entry’s images[].link); media_id names which, else the first with one, and the report keeps the link as it is now. To delete or merge an entry, report it as `incorrect` or `other` with a note naming the entry to keep. It lands in Console → Reports. Audited. Dry run by default.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "impersonation",
+              "incorrect",
+              "outdated",
+              "abuse",
+              "image",
+              "image_link",
+              "other"
+            ],
+            "description": "impersonation: a handle here isn’t the real account; incorrect information; outdated: a handle has changed or closed; abuse or inappropriate content; image: its rights or permission; image_link: where an image links goes somewhere wrong, misleading or harmful; other."
+          },
+          "note": {
+            "description": "What is wrong, for the team (at most 1000 characters). Needed for an image report.",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "media_id": {
+            "description": "For reason `image` or `image_link`: which of the entry’s images (the dry run lists them).",
+            "type": "string",
+            "pattern": "^[0-9]{1,18}$"
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry",
+          "reason"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Report an entry",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_my_submissions",
+      "title": "My own submissions",
+      "description": "This key’s own account’s submissions — proposed changes, new-entry proposals, claims, reports and applications — newest first, 25 a page: each with its status, its entry, when it was sent and decided, and the reviewer’s notes. `status: open` keeps the ones still waiting. With `id`, one submission (yours, or any a reviewer may see) with what it asks and its comment thread.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "default": "all",
+            "type": "string",
+            "enum": [
+              "open",
+              "all"
+            ]
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "id": {
+            "description": "One submission’s id, from this list or from the tool that sent it.",
+            "type": "string",
+            "pattern": "^[0-9]{1,18}$"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "What the route behind the tool answers, as JSON."
+      },
+      "annotations": {
+        "title": "My own submissions",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "retract_my_submission",
+      "title": "Retract my own submission",
+      "description": "Withdraw one of this key’s own account’s submissions while it is still open (waiting for a reviewer, or for your answer): no reviewer acts on it after, and it cannot be reopened. Only your own, whatever the key’s role. Audited. Dry run by default: it says whether the submission is yours and still open.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9]{1,18}$",
+            "description": "The submission’s id (list_my_submissions, or the tool that sent it)."
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Retract my own submission",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "comment_on_my_submission",
+      "title": "Comment on my own submission",
+      "description": "Add a message to one of this key’s own account’s submissions (or, for a reviewer, any they may see): the reviewer reads it with the submission, and the submitter sees it on theirs. Answering a question a reviewer asked on your application sends it back to them. Audited. Dry run by default.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9]{1,18}$",
+            "description": "The submission’s id (list_my_submissions, or the tool that sent it)."
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "The message, in plain words; at most 2,000 characters."
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Comment on my own submission",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "revoke_api_key",
+      "title": "Revoke an API key",
+      "description": "Revoke an API key: anything using it stops working at once, and it cannot be brought back (its owner makes a new one). One of your own account’s keys, or — with `sub`, and the permission to manage users — one of another account’s. The dry run lists the account’s keys (never more than a key’s public prefix) and says if it is the key this call is made with. Audited. Dry run by default; the real run needs confirm set to the key’s id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "pattern": "^[0-9]{1,18}$",
+            "description": "The key’s id, as the dry run lists it."
+          },
+          "sub": {
+            "description": "Another account’s id (`sub`), to revoke one of its keys. Left out: one of your own.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)"
+          },
+          "confirm": {
+            "description": "Needed with dry_run: false: this change’s exact target, as the dry run gives it in `confirm`.",
+            "type": "string",
+            "maxLength": 300
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key_id"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Revoke an API key",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "propose_from_wikidata",
+      "title": "Propose what a Wikidata item says",
+      "description": "Propose, for a reviewer to decide, what a Wikidata item says for an entry: its identifier handles, and when asked its label (as the title), its description (as the subtitle) and its image. `qid` defaults to the item the entry is linked to. For that item, unless the entry is protected or claimed, it proposes handing the values to the Wikidata sync instead of copying them (the sync then writes and keeps them up to date), and says so. For another item it copies the values, which become the site’s own: the sync will not keep them up to date. Handles the entry already has (by each platform’s own rule for letter case) are left out. The entry’s description comes from Wikipedia, not from the item, so it is only ever handed to the sync. Warns when the item is another entry’s. `note` tells the reviewer why. Audited. Dry run by default: it shows what the item has, what the entry has, and the proposal.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!\\.{1,2}$)",
+            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+          },
+          "qid": {
+            "description": "The Wikidata item, e.g. \"Q42\". Default: the item the entry is linked to.",
+            "type": "string",
+            "pattern": "^[Qq][1-9][0-9]*$"
+          },
+          "take": {
+            "description": "What to take from the item: \"handles\" (the default), \"title\" (its label), \"subtitle\" (its description), \"description\" (only by handing it to the sync), \"image\".",
+            "minItems": 1,
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "handles",
+                "title",
+                "subtitle",
+                "description",
+                "image"
+              ]
+            }
+          },
+          "note": {
+            "description": "Why you propose this, in plain words: posted as the proposal’s first comment, which the reviewer reads with it. At most 2,000 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Propose what a Wikidata item says",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ]
+}

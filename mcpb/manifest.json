@@ -1,0 +1,76 @@
+{
+  "manifest_version": "0.3",
+  "name": "verified-handles",
+  "display_name": "Verified Handles",
+  "version": "1.5.0",
+  "description": "Look up people, organisations and things, and their verified social handles and identifiers.",
+  "long_description": "Connects Claude to the Verified Handles MCP server at https://verifiedhandles.org/mcp. With no API key it can look entries up, search them and read their history. With your key it can do what your account can do on the site; every change is a dry run until it is told otherwise. The full guide: https://verifiedhandles.org/developers/mcp",
+  "author": {
+    "name": "Verified Handles",
+    "url": "https://verifiedhandles.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jameshaworthcs/verifiedhandles-mcp.git"
+  },
+  "homepage": "https://verifiedhandles.org",
+  "documentation": "https://verifiedhandles.org/developers/mcp",
+  "support": "https://github.com/jameshaworthcs/verifiedhandles-mcp/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {
+        "VH_API_KEY": "${user_config.api_key}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "get_entry",
+      "description": "Get an entry"
+    },
+    {
+      "name": "search_entries",
+      "description": "Search entries"
+    },
+    {
+      "name": "get_entry_history",
+      "description": "Entry history"
+    }
+  ],
+  "tools_generated": true,
+  "keywords": [
+    "verified handles",
+    "social media",
+    "identifiers",
+    "wikidata"
+  ],
+  "privacy_policies": [
+    "https://verifiedhandles.org/policies/privacy"
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  },
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "API key (optional)",
+      "description": "Your Verified Handles API key, to act as your account. Leave it empty to read with no key. Make one on the site: Console, then Account, then Manage API keys.",
+      "sensitive": true,
+      "required": false
+    }
+  }
+}

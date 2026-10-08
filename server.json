@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "org.verifiedhandles/verified-handles",
+  "title": "Verified Handles",
+  "description": "Look up people, organisations and things, and their verified social handles and identifiers.",
+  "version": "1.5.0",
+  "websiteUrl": "https://verifiedhandles.org/developers/mcp",
+  "repository": {
+    "url": "https://github.com/jameshaworthcs/verifiedhandles-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://verifiedhandles.org/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Optional: Bearer and your Verified Handles API key, to act as your account. Leave it out to read with no key. How to make a key: https://verifiedhandles.org/developers/mcp#keys",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
