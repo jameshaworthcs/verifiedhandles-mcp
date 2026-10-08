@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "verified-handles",
   "display_name": "Verified Handles",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Look up people, organisations and things, and their verified social handles and identifiers.",
   "long_description": "Connects Claude to the Verified Handles MCP server at https://verifiedhandles.org/mcp. With no API key it can look entries up, search them and read their history. With your key it can do what your account can do on the site; every change is a dry run until it is told otherwise. The full guide: https://verifiedhandles.org/developers/mcp",
   "author": {
