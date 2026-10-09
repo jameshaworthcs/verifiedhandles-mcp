@@ -2,6 +2,32 @@
 
 The server gives its version in `serverInfo.version` when an agent connects. We only add within a major version; a change that would break a working client comes with a new one.
 
+## 1.12.0 · 9 October 2026
+
+- set_entry_kind sets the kind of an entry with no Wikidata item (the Entry Manager’s Kind: museum, musical group, company and the rest, or null to clear it), as a revision, for an administrator. Its dry run says when the entry has an item, whose kind comes from Wikidata and which the server refuses.
+- sync_entry_now’s dry run no longer says an administrator’s run on a protected or claimed entry is refused: it runs, changing only the type, and the dry run says so (`keeps_only: "entity_type"`). Anyone else’s is still refused there.
+- wikidata_deleted_entries takes view: "credit_gone", Console → Deleted on Wikidata’s “Wikipedia credit gone”: the entries whose “from Wikipedia” credit names a page that is gone or now outside the articles and drafts, each with its credit_title, state, missing_since and links. It changes nothing; update_entry_fields or propose_entry_change fix the text, and restore_wikipedia_credit with a title credits another page.
+
+## 1.11.0 · 9 October 2026
+
+- Many entries at once. get_entries reads up to 50 entries’ public records in one call (by VHID or short name, with or without a key), each as get_entry reads it signed out, or not_found. update_entries makes live edits to up to 25 entries in one request (each edit the text fields and handles update_entry_fields and update_entry_handles take), and propose_entry_changes files proposals for up to 25 (as propose_entry_change). Each edit is judged as it would be alone, entry by entry; by default each stands alone, and with atomic: true any refused edit means none is made. Both are dry runs by default, listing what would change entry by entry (may_edit_live, may_propose); a real run of update_entries needs confirm set to the batch digest its dry run names, which pins the exact request.
+
+## 1.10.0 · 9 October 2026
+
+- search_console_sitemaps also lists the sitemaps Google read inside each submitted sitemap index (/sitemap.xml’s person-1.xml, browse.xml and the rest), each with its own last read, pending, errors, warnings and discovered URLs, as Search Console shows them under the index. Each sitemap gains `via_index`: true for these, which have no `last_submitted`; the submitted ones come first. Nothing else changed.
+
+## 1.9.0 · 9 October 2026
+
+- Search Console, for administrators: search_console_report (clicks, impressions, CTR and position from what the site has fetched from Google, by default the last 28 final days of web search, grouped by total, date, page, query, kind, device or country, filtered by page, entry, kind, query or search type), search_console_index_status (URL Inspection’s verdicts for a URL, an entry or a kind, the indexed share per kind, the canonical mismatches) and search_console_sitemaps (the sitemaps Google lists, and whether this instance may change them). Two writes, dry run by default: resubmit_sitemap (by default /sitemap.xml) and delete_sitemap (only a sitemap the site answers 404 or 410 for, never /sitemap.xml, with confirm set to its URL). Both are refused everywhere but production, before anything is sent to Google.
+
+## 1.8.0 · 8 October 2026
+
+- Every read tool’s `outputSchema` now names its fields, from the documented answer of the route behind it (the audit log’s rows, handle health’s checks, the Entry manager’s card, the review queue’s submissions, the sync’s state, the open Wikidata corrections, rate limits and the rest): each field’s type and description, as the console API documents them. Still loose: an object may carry fields its schema does not name. A tool whose answer takes one of two shapes (a list or one item: list_duplicate_qids, list_bulk_changes, list_my_submissions, list_applications, email_outbox, permission_history, get_entry_history_full) names every field of each, optional unless both always carry it. No tool’s arguments or answers changed.
+
+## 1.7.0 · 8 October 2026
+
+- ChatGPT can link your account on `/mcp`: every tool is listed with OpenAI’s `securitySchemes` (on the tool and in its `_meta`): `noauth` and `oauth2` (scope `mcp`) for the three reads that need no key, `oauth2` for every other tool. With no key, a call of a tool that needs an account answers a tool error, `sign_in_required`, whose `_meta["mcp/www_authenticate"]` is the Bearer challenge for `/mcp`; it was `Tool … not found`. What `/mcp` lists with no key is unchanged, and so is everything with a key or a token.
+
 ## 1.6.0 · 8 October 2026
 
 - rate_limits: Console → Rate limits, read only, for a key that may run the Wikidata sync: each consumer’s state, its hosts’ limits and live rates, today’s units against its daily ceiling, and when its worker’s key expires.

@@ -4,7 +4,7 @@
 
 This repository holds what you need to connect to it: the server itself runs at `https://verifiedhandles.org/mcp`, and its code is not here. The full guide, with every tool, is at https://verifiedhandles.org/developers/mcp.
 
-- **Version** 1.6.0: what changed is in [CHANGELOG.md](CHANGELOG.md).
+- **Version** 1.12.0: what changed is in [CHANGELOG.md](CHANGELOG.md).
 - **The tools**, as the server lists them: [with no key](tools/no-key.json) and [with a registered account’s key](tools/registered-key.json), each with its input and output schemas.
 - **A Claude Desktop extension** to install in one click: [mcpb/](mcpb/).
 - **The MCP Registry listing**: [server.json](server.json).
@@ -18,11 +18,13 @@ MCP, the Model Context Protocol, is how an AI agent (Claude, Cursor, Copilot and
 
 Every tool goes through the same routes and checks as the site and the rest of the API: an agent can do nothing you could not do yourself, and with a key it acts as you. Nothing is changed by accident: every tool that changes something only shows what it would do until it is told otherwise (see [dry runs](https://verifiedhandles.org/developers/mcp#dry-run)).
 
+The server is listed in the MCP Registry as `org.verifiedhandles/verified-handles`, and its setup guides, changelog and [a Claude Desktop extension](https://github.com/jameshaworthcs/verifiedhandles-mcp/releases/latest/download/verified-handles.mcpb) are [on GitHub](https://github.com/jameshaworthcs/verifiedhandles-mcp).
+
 ## No key, a read-only key, or a full key
 
 | Connected with | Tools listed | Acts as |
 | --- | --- | --- |
-| No key | The public reads that need nothing else: [`get_entry`](https://verifiedhandles.org/developers/mcp#mcp-get_entry), [`search_entries`](https://verifiedhandles.org/developers/mcp#mcp-search_entries) and [`get_entry_history`](https://verifiedhandles.org/developers/mcp#mcp-get_entry_history). Just leave out the `Authorization` header. | A signed-out visitor: the public record only. |
+| No key | The public reads that need nothing else: [`get_entry`](https://verifiedhandles.org/developers/mcp#mcp-get_entry), [`search_entries`](https://verifiedhandles.org/developers/mcp#mcp-search_entries), [`get_entry_history`](https://verifiedhandles.org/developers/mcp#mcp-get_entry_history) and [`get_entries`](https://verifiedhandles.org/developers/mcp#mcp-get_entries). Just leave out the `Authorization` header. | A signed-out visitor: the public record only. |
 | A read-only key | Every read tool your role is listed, and no tool that changes anything. | You, reading. |
 | A key | Every tool your role is listed (see [which tools each role is listed](https://verifiedhandles.org/developers/mcp#roles)). | You, at the lower of the key’s role ceiling and your role today. |
 
@@ -39,9 +41,9 @@ Any account can make a key: registered accounts and trusted editors may by defau
 
 ## Connect with your account (OAuth)
 
-Clients that sign in with OAuth (Claude, Claude Code, ChatGPT, VS Code) can act as you without an API key. Connect them to `https://verifiedhandles.org/mcp/account`: they open a Verified Handles page where you sign in and choose what they may do: a role ceiling, read only, and for how long (7, 30 or 90 days).
+Clients that sign in with OAuth (Claude, Claude Code, ChatGPT, VS Code, Cursor) can act as you without an API key. Connect them to `https://verifiedhandles.org/mcp/account`: they open a Verified Handles page where you sign in and choose what they may do: a role ceiling, read only, and for how long (7, 30 or 90 days).
 
-`https://verifiedhandles.org/mcp` stays as it is: with no key, the public reads; with an API key, your account. Your connected apps are on Console → Account → API keys, where you can disconnect one; you can have up to 10 at once. For clients that can’t sign in this way (Cursor, scripts), use an API key as before.
+`https://verifiedhandles.org/mcp` stays as it is: with no key, the public reads; with an API key, your account. Your connected apps are on Console → Account → API keys, where you can disconnect one; you can have up to 10 at once. For clients that can’t sign in this way, such as scripts, use an API key as before.
 
 ### Claude Code
 
@@ -76,7 +78,25 @@ VS Code asks you to sign in the first time it connects.
 
 ### ChatGPT
 
-In developer mode, create a connector with the address `https://verifiedhandles.org/mcp/account` and OAuth as its authentication.
+In developer mode, create a connector with the address `https://verifiedhandles.org/mcp/account` and OAuth as its authentication. Or start with `https://verifiedhandles.org/mcp` and no key: it reads, and ChatGPT can link your Verified Handles account later, when it asks you to.
+
+### Cursor, and other apps that register themselves
+
+Some clients, Cursor among them, publish no details of their own: they register themselves with Verified Handles the first time they connect. That works, but nobody can check who made an app like that, so the page marks it **Unverified app**, and your API keys page marks it **Unverified** too. Instead of where its details are published, it shows where the app sends you back to: a web address, your own computer, or for an app on your device, the kind of address it opens (such as `com.example.app:`). Any app can call itself anything, so allow one only if you started connecting it yourself, just now.
+
+*Cursor: mcp.json*
+
+```json
+{
+  "mcpServers": {
+    "verified-handles": {
+      "url": "https://verifiedhandles.org/mcp/account"
+    }
+  }
+}
+```
+
+With no `headers`, Cursor asks you to sign in when it connects. To use an API key instead, see [Setting up your client](https://verifiedhandles.org/developers/mcp#setup-cursor).
 
 ### What the page asks
 
@@ -85,7 +105,7 @@ The page names the app as it describes itself, the web address its details are p
 ### For client authors
 
 - A request to `https://verifiedhandles.org/mcp/account` with no token answers `401` with `WWW-Authenticate: Bearer resource_metadata="https://verifiedhandles.org/.well-known/oauth-protected-resource/mcp/account", scope="mcp"`. The metadata is at `https://verifiedhandles.org/.well-known/oauth-protected-resource/mcp/account` (RFC 9728) and `https://verifiedhandles.org/.well-known/oauth-authorization-server` (RFC 8414).
-- A client registers with a Client ID Metadata Document: its `client_id` is the `https` address of that document. There is no Dynamic Client Registration, and no client secret.
+- A client registers with a Client ID Metadata Document: its `client_id` is the `https` address of that document. Without one, it can register at `https://verifiedhandles.org/oauth/register` (Dynamic Client Registration, RFC 7591), and the person sees it marked unverified. Either way there is no client secret. A registered client’s redirect URIs are `https:`, loopback `http:` (any port then matches) or a private-use scheme with a dot (RFC 8252 §7.1, such as `com.example.app:/callback`); others are dropped. At most 10 registrations an hour from one address; one never used is deleted after 24 hours.
 - The authorization code flow with PKCE, `S256` only. Send `resource`: the address you connect to (`https://verifiedhandles.org/mcp/account`, or `https://verifiedhandles.org/mcp`); a token works there and nowhere else. The one scope is `mcp`, and `iss` comes back with the code.
 - A code works once, for 60 seconds; an access token for 1 hour. A refresh token is replaced each time it is used, and using an old one again ends the connection. Send the token as `Authorization: Bearer`, never in a query string; revoke it at `https://verifiedhandles.org/oauth/revoke`.
 
@@ -230,7 +250,7 @@ Messages with no key are limited to 60 a minute from one IP address, shared by e
 
 The `mcpb/` folder is a Claude Desktop extension. Claude Desktop runs it with its own Node.js; it starts `mcp-remote`, which connects to the server for it. Its one setting is your API key, and it is optional: left empty, the extension reads with no key. Claude Desktop hides the key as you type it and stores it securely.
 
-To build the `.mcpb` file from this folder (Node.js 18 or later):
+The built file, `verified-handles.mcpb`, is on the [releases page](https://github.com/jameshaworthcs/verifiedhandles-mcp/releases/latest): open it with Claude Desktop to install it. To build it yourself from this folder (Node.js 18 or later):
 
 ```sh
 cd mcpb

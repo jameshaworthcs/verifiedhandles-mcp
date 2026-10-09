@@ -3,7 +3,7 @@
   "name": "org.verifiedhandles/verified-handles",
   "title": "Verified Handles",
   "description": "Look up people, organisations and things, and their verified social handles and identifiers.",
-  "version": "1.6.0",
+  "version": "1.12.0",
   "websiteUrl": "https://verifiedhandles.org/developers/mcp",
   "repository": {
     "url": "https://github.com/jameshaworthcs/verifiedhandles-mcp",

@@ -494,6 +494,19 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -640,6 +653,19 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -831,6 +857,564 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_entries",
+      "title": "Get many entries",
+      "description": "Up to 50 entries’ public records in one call, by VHID or short name (not a Wikidata QID: get_entry or search_entries finds an entry by its item), each answered as get_entry answers it signed out — the entry, or not_found — in the order given. A name given twice is answered once.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "allOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?!\\.{1,2}$)"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[^,]*$"
+                }
+              ]
+            },
+            "description": "The entries: each a VHID (11 digits) or a short name."
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "description": "The key as asked for, trimmed."
+                    },
+                    "status": {
+                      "type": "string",
+                      "const": "ok"
+                    },
+                    "entity": {
+                      "type": "object",
+                      "properties": {
+                        "vhid": {
+                          "type": "string",
+                          "pattern": "^\\d{11}$",
+                          "description": "The entry’s VHID: 11 digits, permanent."
+                        },
+                        "short": {
+                          "description": "The entry’s short name (`/<short>`), if it has one.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "subtitle": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "entity_type": {
+                          "description": "What it is, from its Wikidata item: `person`, `organization` or `brand`; null when unknown. `entity_kind` says more.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "entity_kind": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "person",
+                                "musical_group",
+                                "sports_organization",
+                                "broadcaster",
+                                "publisher",
+                                "educational_institution",
+                                "research_organization",
+                                "religious_organization",
+                                "museum",
+                                "financial_institution",
+                                "chain",
+                                "nonprofit",
+                                "company",
+                                "organization",
+                                "website",
+                                "brand"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `website` (brand: website or app), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                        },
+                        "verified": {
+                          "type": "boolean",
+                          "description": "Verified Handles has verified the entry."
+                        },
+                        "description": {
+                          "description": "The description as sanitised HTML, links to other entries named as they are today.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "description_source": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "description": "The source’s kind (`wikipedia`)."
+                                },
+                                "title": {
+                                  "type": "string",
+                                  "description": "The page’s title, underscored (`Draft:` first for a draft)."
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "description": "The page."
+                                },
+                                "adapted": {
+                                  "description": "Present and true when the text has been edited on the site since.",
+                                  "type": "boolean"
+                                },
+                                "revision": {
+                                  "description": "The page’s revision the text was taken from: its permalink is `https://en.wikipedia.org/w/index.php?title=<title>&oldid=<revision>`. Absent on a credit from before revisions were kept.",
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "draft": {
+                                  "description": "Present and true when the page is an English Wikipedia draft (the Draft namespace), not yet an article.",
+                                  "type": "boolean",
+                                  "const": true
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "title",
+                                "url"
+                              ],
+                              "additionalProperties": {},
+                              "description": "The English Wikipedia page an entry’s description was taken from: an article, or a draft (`draft: true`)."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description_license": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "const": "CC-BY-SA-4.0"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The description’s licence, as an SPDX id: `CC-BY-SA-4.0` when it was taken from Wikipedia (`description_source` is set), which means crediting the article and sharing alike. Null otherwise: the description is CC0 like the rest of the text."
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "The entry’s canonical page."
+                        },
+                        "image": {
+                          "description": "The lead image (the same as `images[0].url`), or null.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "image_rights": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "wikimedia_commons",
+                                    "upload"
+                                  ],
+                                  "description": "Where the image came from."
+                                },
+                                "license": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "cc0-1.0",
+                                        "public-domain",
+                                        "cc-by-4.0",
+                                        "cc-by-sa-4.0",
+                                        "supplied",
+                                        "permission",
+                                        "none"
+                                      ]
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "description": "An upload’s licence, by id. Null for a Commons image (see `license_name`) or when none was recorded."
+                                },
+                                "license_name": {
+                                  "description": "The licence’s name, e.g. \"CC BY-SA 4.0\". Null until it is known.",
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "license_url": {
+                                  "description": "The licence’s text.",
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "freely_licensed": {
+                                  "description": "May be reused under a free licence. Null when no licence is recorded.",
+                                  "type": [
+                                    "boolean",
+                                    "null"
+                                  ]
+                                },
+                                "credit": {
+                                  "description": "The credit line to show when reusing the image.",
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "source_page": {
+                                  "description": "The image’s Wikimedia Commons file page, which states its licence and author.",
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "details_url": {
+                                  "type": "string",
+                                  "description": "The entry’s \"About this image\" page."
+                                }
+                              },
+                              "required": [
+                                "source",
+                                "license",
+                                "license_name",
+                                "license_url",
+                                "freely_licensed",
+                                "credit",
+                                "source_page",
+                                "details_url"
+                              ],
+                              "additionalProperties": {},
+                              "description": "Who owns an image and how it may be reused. An entry’s text is CC0 (bar a description taken from Wikipedia); its images are licensed separately, by their owners."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The lead image’s rights, or null when there is no image."
+                        },
+                        "images": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "description": "The image, as a path on this site (`/img/w/480/<id>`)."
+                              },
+                              "main": {
+                                "type": "boolean",
+                                "description": "True for the lead image, false for the gallery images after it."
+                              },
+                              "image_rights": {
+                                "type": "object",
+                                "properties": {
+                                  "source": {
+                                    "type": "string",
+                                    "enum": [
+                                      "wikimedia_commons",
+                                      "upload"
+                                    ],
+                                    "description": "Where the image came from."
+                                  },
+                                  "license": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "cc0-1.0",
+                                          "public-domain",
+                                          "cc-by-4.0",
+                                          "cc-by-sa-4.0",
+                                          "supplied",
+                                          "permission",
+                                          "none"
+                                        ]
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "An upload’s licence, by id. Null for a Commons image (see `license_name`) or when none was recorded."
+                                  },
+                                  "license_name": {
+                                    "description": "The licence’s name, e.g. \"CC BY-SA 4.0\". Null until it is known.",
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "license_url": {
+                                    "description": "The licence’s text.",
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "freely_licensed": {
+                                    "description": "May be reused under a free licence. Null when no licence is recorded.",
+                                    "type": [
+                                      "boolean",
+                                      "null"
+                                    ]
+                                  },
+                                  "credit": {
+                                    "description": "The credit line to show when reusing the image.",
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "source_page": {
+                                    "description": "The image’s Wikimedia Commons file page, which states its licence and author.",
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "details_url": {
+                                    "type": "string",
+                                    "description": "The entry’s \"About this image\" page."
+                                  }
+                                },
+                                "required": [
+                                  "source",
+                                  "license",
+                                  "license_name",
+                                  "license_url",
+                                  "freely_licensed",
+                                  "credit",
+                                  "source_page",
+                                  "details_url"
+                                ],
+                                "additionalProperties": {},
+                                "description": "Who owns an image and how it may be reused. An entry’s text is CC0 (bar a description taken from Wikipedia); its images are licensed separately, by their owners."
+                              },
+                              "link": {
+                                "description": "Where the image links on the entry page instead of opening the full-screen viewer, or null.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "url",
+                              "main",
+                              "image_rights",
+                              "link"
+                            ],
+                            "additionalProperties": {},
+                            "description": "One image an entry shows."
+                          },
+                          "description": "Every image the entry shows, the lead first. Empty when it shows none."
+                        },
+                        "handles": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "platform": {
+                                "type": "string",
+                                "description": "The platform’s id (`twitter`, `instagram`, `wikidata`, …)."
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "The platform’s display name."
+                              },
+                              "category": {
+                                "type": "string",
+                                "enum": [
+                                  "social",
+                                  "messaging",
+                                  "website",
+                                  "identifier"
+                                ],
+                                "description": "How the entry page groups it."
+                              },
+                              "value": {
+                                "description": "The handle as stored (a username, an id, a URL). Null for an email address, which is never published as data.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "display": {
+                                "description": "The label the entry page shows instead of the value, if an editor set one. Null for email.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "url": {
+                                "description": "The profile’s address, built from the platform’s URL pattern. Null for email.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "verified": {
+                                "type": "boolean",
+                                "description": "Verified Handles has checked that this account belongs to the entry."
+                              }
+                            },
+                            "required": [
+                              "platform",
+                              "name",
+                              "category",
+                              "value",
+                              "display",
+                              "url",
+                              "verified"
+                            ],
+                            "additionalProperties": {},
+                            "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
+                          }
+                        }
+                      },
+                      "required": [
+                        "vhid",
+                        "short",
+                        "title",
+                        "subtitle",
+                        "entity_type",
+                        "entity_kind",
+                        "verified",
+                        "description",
+                        "description_source",
+                        "description_license",
+                        "url",
+                        "image",
+                        "image_rights",
+                        "images",
+                        "handles"
+                      ],
+                      "additionalProperties": {},
+                      "description": "Exactly what `GET /api/v1/entities/{key}` answers for this key."
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "status",
+                    "entity"
+                  ],
+                  "additionalProperties": {}
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "description": "The key as asked for, trimmed."
+                    },
+                    "status": {
+                      "type": "string",
+                      "const": "not_found",
+                      "description": "No public entry answers to the key: where the single read answers 404."
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "status"
+                  ],
+                  "additionalProperties": {}
+                }
+              ],
+              "description": "What one requested key answers."
+            },
+            "description": "One element per key asked for, in the order asked, a repeated key once (where it first appears)."
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "Many entries at once: each key’s answer, in request order."
+      },
+      "annotations": {
+        "title": "Get many entries",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -853,10 +1437,72 @@
       },
       "outputSchema": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                },
+                "width": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "height": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mime": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "token": {
+                  "type": "string",
+                  "description": "The file, signed for 30 minutes: what `POST /api/media/commons` and the preview take."
+                },
+                "commonsPage": {
+                  "type": "string",
+                  "description": "The file’s page on Commons, with its licence and author."
+                }
+              },
+              "required": [
+                "filename",
+                "width",
+                "height",
+                "mime",
+                "token",
+                "commonsPage"
+              ],
+              "additionalProperties": {},
+              "description": "A Wikimedia Commons file a search found."
+            }
+          }
+        },
+        "required": [
+          "results"
+        ],
         "$schema": "http://json-schema.org/draft-07/schema#",
-        "additionalProperties": {},
-        "description": "What the route behind the tool answers, as JSON."
+        "additionalProperties": {}
       },
       "annotations": {
         "title": "Search Wikimedia Commons",
@@ -865,6 +1511,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -998,6 +1654,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -1129,6 +1795,469 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "update_entries",
+      "title": "Edit many entries live",
+      "description": "Live edits to up to 25 entries in one request, each as update_entry_fields and update_entry_handles make one (the text fields, handles added and removed): a new revision each, audited with one batch id. Whether this key may edit each entry live is decided entry by entry, as for one edit (the dry run’s may_edit_live). By default each edit stands alone and the answer gives each one’s outcome; with atomic: true, any refused edit means none is made. Dry run by default: it reads each entry and lists what would change. The real run needs confirm set to the batch digest the dry run names. To ask a reviewer instead, use propose_entry_changes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "edits": {
+            "minItems": 1,
+            "maxItems": 25,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "entry": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^(?!\\.{1,2}$)",
+                  "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "subtitle": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 500
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "description": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 65536
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "short": {
+                  "description": "The short name in the entry’s URL; null removes it (the VHID URL stays).",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "remove_wikipedia_credit": {
+                  "description": "true: remove the “from Wikipedia” credit from the description.",
+                  "type": "boolean"
+                },
+                "add_handles": {
+                  "maxItems": 50,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "platform_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "The handle as stored, e.g. \"nasa\"."
+                      },
+                      "display": {
+                        "description": "Text to show instead of the value.",
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "platform_id",
+                      "value"
+                    ]
+                  }
+                },
+                "remove_handles": {
+                  "description": "Handles to take off, each by its value — or, for an email this key may not see, by {platform_id: \"email\", ref}.",
+                  "maxItems": 50,
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "platform_id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                          },
+                          "value": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "The handle as stored, e.g. \"nasa\"."
+                          }
+                        },
+                        "required": [
+                          "platform_id",
+                          "value"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "platform_id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "The masked handle’s platform: \"email\"."
+                          },
+                          "ref": {
+                            "type": "string",
+                            "pattern": "^[0-9]{1,18}$",
+                            "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                          }
+                        },
+                        "required": [
+                          "platform_id",
+                          "ref"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "base_revision_id": {
+                  "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+                  "type": "string",
+                  "pattern": "^[0-9]+$"
+                }
+              },
+              "required": [
+                "entry"
+              ]
+            },
+            "description": "The edits, each to a different entry."
+          },
+          "atomic": {
+            "default": false,
+            "description": "true: all or nothing — if any edit is refused, none is made (the route answers 422 naming each refused edit). false (the default): each edit on its own.",
+            "type": "boolean"
+          },
+          "summary": {
+            "description": "Why you made these edits, in a few plain words: each edit’s summary unless it gives its own. Shown in each entry’s public history. Never an internal tracking ID; a VHID is fine.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "confirm": {
+            "description": "Needed with dry_run: false: this change’s exact target, as the dry run gives it in `confirm`.",
+            "type": "string",
+            "maxLength": 300
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "edits"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Edit many entries live",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "propose_entry_changes",
+      "title": "Propose changes to many entries",
+      "description": "Proposals for up to 25 entries in one request, each as propose_entry_change files one (the text fields, handles added and removed) for a reviewer to decide; nothing changes until a person approves each. Audited, with one batch id. Proposing the same change again while it waits answers the same proposal. By default each proposal stands alone; with atomic: true, any refused one means none is filed. Dry run by default: it reads each entry and lists what would be proposed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "edits": {
+            "minItems": 1,
+            "maxItems": 25,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "entry": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^(?!\\.{1,2}$)",
+                  "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "subtitle": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 500
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "description": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 65536
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "short": {
+                  "description": "The short name in the entry’s URL; null removes it (the VHID URL stays).",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "remove_wikipedia_credit": {
+                  "description": "true: remove the “from Wikipedia” credit from the description.",
+                  "type": "boolean"
+                },
+                "add_handles": {
+                  "maxItems": 50,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "platform_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "The handle as stored, e.g. \"nasa\"."
+                      },
+                      "display": {
+                        "description": "Text to show instead of the value.",
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "platform_id",
+                      "value"
+                    ]
+                  }
+                },
+                "remove_handles": {
+                  "description": "Handles to take off, each by its value — or, for an email this key may not see, by {platform_id: \"email\", ref}.",
+                  "maxItems": 50,
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "platform_id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                          },
+                          "value": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "The handle as stored, e.g. \"nasa\"."
+                          }
+                        },
+                        "required": [
+                          "platform_id",
+                          "value"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "platform_id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "The masked handle’s platform: \"email\"."
+                          },
+                          "ref": {
+                            "type": "string",
+                            "pattern": "^[0-9]{1,18}$",
+                            "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                          }
+                        },
+                        "required": [
+                          "platform_id",
+                          "ref"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "base_revision_id": {
+                  "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+                  "type": "string",
+                  "pattern": "^[0-9]+$"
+                }
+              },
+              "required": [
+                "entry"
+              ]
+            },
+            "description": "The proposals, each to a different entry."
+          },
+          "atomic": {
+            "default": false,
+            "description": "true: all or nothing — if any edit is refused, none is made (the route answers 422 naming each refused edit). false (the default): each edit on its own.",
+            "type": "boolean"
+          },
+          "dry_run": {
+            "default": true,
+            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "edits"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dry_run": {
+            "description": "true: a dry run, which wrote nothing. Absent from a real run.",
+            "type": "boolean"
+          },
+          "would_send": {
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+          },
+          "note": {
+            "description": "A dry run: what to do next to make the change, in words."
+          },
+          "confirm": {
+            "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
+            "type": "string"
+          },
+          "may_edit_live": {
+            "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
+            "type": "boolean"
+          },
+          "refused_because": {
+            "description": "A dry run the real run would be refused for: why, in words.",
+            "type": "string"
+          },
+          "result": {
+            "description": "A real run: the route’s own answer, where the tool adds facts of its own beside it."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "A dry run (`dry_run: true`): what the change would be and the exact request it would send. A real run: what the route answered."
+      },
+      "annotations": {
+        "title": "Propose changes to many entries",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -1307,6 +2436,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -1404,6 +2543,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -1505,6 +2654,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -1586,6 +2745,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -1992,6 +3161,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -2124,6 +3303,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -2217,6 +3406,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -2250,10 +3449,297 @@
       },
       "outputSchema": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "all"
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "needs_info",
+                  "approved",
+                  "rejected",
+                  "merged",
+                  "spam",
+                  "superseded",
+                  "retracted",
+                  "resolved"
+                ]
+              }
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "per_page": {
+            "type": "number",
+            "const": 25
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "has_next": {
+            "type": "boolean"
+          },
+          "submissions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "new_entity",
+                    "correction",
+                    "claim",
+                    "report",
+                    "application"
+                  ],
+                  "description": "What was asked: a new entry, a change, a claim, a report or an application."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "needs_info",
+                    "approved",
+                    "rejected",
+                    "merged",
+                    "spam",
+                    "superseded",
+                    "retracted",
+                    "resolved"
+                  ]
+                },
+                "entry": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "vhid": {
+                          "type": "string"
+                        },
+                        "short": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "vhid",
+                        "short",
+                        "title"
+                      ],
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The entry it is about; null for a new entry or an application."
+                },
+                "qid": {
+                  "description": "The Wikidata item it names, if any.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "decided_at": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "review_notes": {
+                  "description": "What the reviewer wrote when deciding it.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "status",
+                "entry",
+                "qid",
+                "created_at",
+                "decided_at",
+                "review_notes"
+              ],
+              "additionalProperties": {},
+              "description": "One thing you sent for review, as your submissions list shows it."
+            }
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "new_entity",
+              "correction",
+              "claim",
+              "report",
+              "application"
+            ],
+            "description": "What was asked: a new entry, a change, a claim, a report or an application."
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "vhid": {
+                    "type": "string"
+                  },
+                  "short": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "vhid",
+                  "short",
+                  "title"
+                ],
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The entry it is about; null for a new entry or an application."
+          },
+          "qid": {
+            "description": "The Wikidata item it names, if any.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "review_notes": {
+            "description": "What the reviewer wrote when deciding it.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mine": {
+            "type": "boolean",
+            "description": "You sent it."
+          },
+          "payload": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {},
+            "description": "What it asks for, in its kind’s shape: for `correction`, `new_entity` and `application`, an `EditPayload` (the fields to set, and for a revert or an approval the server’s own); for `report`, `{reason, note?, media_id?, link?}`; for `claim`, `{method}`."
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "author_name": {
+                  "description": "The writer’s name, where you may see it.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "author_role": {
+                  "description": "`reviewer` for a reviewer’s comment; null for the submitter’s own.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "body": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "author_name",
+                "author_role",
+                "body",
+                "created_at"
+              ],
+              "additionalProperties": {}
+            }
+          }
+        },
+        "required": [
+          "status"
+        ],
         "$schema": "http://json-schema.org/draft-07/schema#",
-        "additionalProperties": {},
-        "description": "What the route behind the tool answers, as JSON."
+        "additionalProperties": {}
       },
       "annotations": {
         "title": "My own submissions",
@@ -2262,6 +3748,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -2329,6 +3825,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -2403,6 +3909,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -2482,6 +3998,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     },
     {
@@ -2578,6 +4104,16 @@
       },
       "execution": {
         "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
       }
     }
   ]
