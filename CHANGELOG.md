@@ -2,6 +2,27 @@
 
 The server gives its version in `serverInfo.version` when an agent connects. We only add within a major version; a change that would break a working client comes with a new one.
 
+## 1.28.0 · 11 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes: a preferred rank (set_rank, add_claim, supersede) that outranks only point-in-time values (each with a point in time, P585, and no start or end time: a follower count P8687, a population, a revenue) is no longer refused rank_choice_required: the newer value takes the preferred rank and the older ones stay normal with no end time, the dry run still naming them in makes_not_current (the step’s evidence.outranks_choice is "point_in_time"). `outranked` takes "point_in_time" to ask for that by name, refused not_point_in_time (naming them in not_point_in_time) when one of them has no point in time, or has a start or end time. Mixed cases still need "end_date" or "leave_normal".
+
+## 1.27.0 · 11 October 2026
+
+- New tool dismiss_wikidata_correction: withdraw one proposed Wikidata correction, the suggestion job’s or a person’s, with a `reason` kept in the audit, as the console’s Dismiss does (through its dismiss.json, which now takes a key with the Wikidata write-back permission). Dry run by default. Use it instead of filing a correction only to take another’s place.
+- propose_wikidata_correction and propose_wikidata_changes: a JSON number given for a text or external-id property is filed as its digits (7411938 → "7411938"; it was refused bad_value), and a value that fails the property’s format constraint (P1793) is refused format_mismatch with the pattern, for add_claim, supersede and set_value. Their dry runs now list the open corrections a proposal would take the place of (`replaces`, and a line in `warning`), and a single correction’s answer carries the row filed (`ids`) and those replaced (`replaced`), as a group’s carries `ids`.
+
+## 1.26.0 · 11 October 2026
+
+- propose_wikidata_correction deprecates a dead account’s value with kind dead_account: an account the platform shows deleted, suspended or terminated, on a property of the platform catalog, filed whether or not VH still lists it, with evidence.why required and the same reason and source checks as kind suppressed, which still deprecates only a value taken off VH (not_suppressed otherwise). set_rank deprecated is held to the same reason rule. Either dry run, and the answer, now carries still_listed and a warning line, “Still listed on VH entry <vhid> (…): …”, naming each handle a live entry on the item still shows and who keeps it (kept_by): the Wikidata sync takes its own off once Wikidata ranks the statement deprecated and the handle-removal grace is out; a person’s it never does. propose_wikidata_correction’s dry run now also passes on the route’s makes_not_current and warning, as propose_wikidata_changes’ did.
+
+## 1.25.0 · 11 October 2026
+
+- get_wikidata_corrections: what became of Wikidata corrections by id or by group_id, whatever their state (pending, queued, applying, applied with its revisions, failed with why and whether it was tried, dismissed, resolved, undone), where list_wikidata_corrections shows only the pending ones. Each group carries constraint_results: Wikidata’s own constraint checks, which the site now runs on every statement a group made or changed once it is made, each issue marked as introduced by the group or there before. wait_seconds (up to 45) waits while anything named is still being made or checked, never on a reviewer.
+
+## 1.24.0 · 11 October 2026
+
+- upload_image takes a file of up to 70 MB (was 10 MB): its base64, up to 94 MB, now reaches the site whole, where before the site’s front end stopped a request over 11 MB (about 8 MB of file). The editor’s own file upload takes the same 70 MB. A request the site refuses unread (no key, a key that may not upload, a file over 70 MB) is answered with the site’s own JSON error, not the front end’s error page.
+
 ## 1.23.1 · 11 October 2026
 
 - propose_new_entry’s dry run asks the site to check the proposal without queueing it (POST /api/entity?check=1), so refused_because now names what the real run would be refused for that the tool could not see before: a short name that is the address of a site redirect (short_is_redirect), a deleted entry or a merged-away item, a blocked word, or new entries paused.
