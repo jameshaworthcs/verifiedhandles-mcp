@@ -4,7 +4,7 @@
 
 This repository holds what you need to connect to it: the server itself runs at `https://verifiedhandles.org/mcp`, and its code is not here. The full guide, with every tool, is at https://verifiedhandles.org/developers/mcp.
 
-- **Version** 1.12.0: what changed is in [CHANGELOG.md](CHANGELOG.md).
+- **Version** 1.23.1: what changed is in [CHANGELOG.md](CHANGELOG.md).
 - **The tools**, as the server lists them: [with no key](tools/no-key.json) and [with a registered account’s key](tools/registered-key.json), each with its input and output schemas.
 - **A Claude Desktop extension** to install in one click: [mcpb/](mcpb/).
 - **The MCP Registry listing**: [server.json](server.json).
@@ -24,7 +24,7 @@ The server is listed in the MCP Registry as `org.verifiedhandles/verified-handle
 
 | Connected with | Tools listed | Acts as |
 | --- | --- | --- |
-| No key | The public reads that need nothing else: [`get_entry`](https://verifiedhandles.org/developers/mcp#mcp-get_entry), [`search_entries`](https://verifiedhandles.org/developers/mcp#mcp-search_entries), [`get_entry_history`](https://verifiedhandles.org/developers/mcp#mcp-get_entry_history) and [`get_entries`](https://verifiedhandles.org/developers/mcp#mcp-get_entries). Just leave out the `Authorization` header. | A signed-out visitor: the public record only. |
+| No key | The public reads that need nothing else: [`get_entry`](https://verifiedhandles.org/developers/mcp#mcp-get_entry), [`search_entries`](https://verifiedhandles.org/developers/mcp#mcp-search_entries), [`find_by_handle`](https://verifiedhandles.org/developers/mcp#mcp-find_by_handle), [`get_entry_history`](https://verifiedhandles.org/developers/mcp#mcp-get_entry_history) and [`get_entries`](https://verifiedhandles.org/developers/mcp#mcp-get_entries). Just leave out the `Authorization` header. | A signed-out visitor: the public record only. |
 | A read-only key | Every read tool your role is listed, and no tool that changes anything. | You, reading. |
 | A key | Every tool your role is listed (see [which tools each role is listed](https://verifiedhandles.org/developers/mcp#roles)). | You, at the lower of the key’s role ceiling and your role today. |
 

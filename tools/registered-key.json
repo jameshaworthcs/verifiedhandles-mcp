@@ -274,7 +274,7 @@
                       "properties": {
                         "url": {
                           "type": "string",
-                          "description": "The image, as a path on this site (`/img/w/480/<id>`)."
+                          "description": "The image, as a path on this site (`/img/w/480q75/<id>`)."
                         },
                         "main": {
                           "type": "boolean",
@@ -430,6 +430,35 @@
                         "verified": {
                           "type": "boolean",
                           "description": "Verified Handles has checked that this account belongs to the entry."
+                        },
+                        "checked": {
+                          "description": "What Verified Handles’ own handle checker found when it last looked at this account, from the platform’s official API: only on YouTube (channel and handle), Deezer and GitHub, and only for a look at most 7 days old. Absent otherwise. The entry page shows it only for `dead` (“Not found when checked …”) and `renamed`.",
+                          "type": "object",
+                          "properties": {
+                            "verdict": {
+                              "type": "string",
+                              "enum": [
+                                "live",
+                                "dead",
+                                "renamed",
+                                "unknown"
+                              ],
+                              "description": "`live`: the profile was there. `dead`: the platform did not find it. `renamed`: it answers under another name. `unknown`: the platform gave no answer a rule could read."
+                            },
+                            "at": {
+                              "type": "string",
+                              "description": "When it looked (ISO 8601, UTC)."
+                            },
+                            "now": {
+                              "description": "For `renamed`, the name it answers to now, when the platform gave one. A YouTube handle’s is lowercase.",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "verdict",
+                            "at"
+                          ],
+                          "additionalProperties": {}
                         }
                       },
                       "required": [
@@ -648,6 +677,115 @@
       },
       "annotations": {
         "title": "Search entries",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "find_by_handle",
+      "title": "Find entries by handle",
+      "description": "Which public entries list a handle: “is x.com/someone an official account, and whose?”. Give a profile’s address as url (https://x.com/someone), or platform (its catalog id: twitter, instagram, youtube, …) and value (someone or @someone). Answers each entry’s VHID, title and URL, the handle as the entry lists it, and whether that handle is verified; an empty list when no entry lists it. Case is ignored where the platform ignores it. Email addresses are not looked up.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "description": "A profile’s address, such as https://x.com/someone. Instead of platform and value.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "platform": {
+            "description": "The platform’s catalog id, such as twitter. With value.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "value": {
+            "description": "The handle on that platform, such as someone or @someone.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "description": "The platform looked on: the one asked, or the one whose address `url` is."
+          },
+          "value": {
+            "type": "string",
+            "description": "The handle looked up, as the site stores one: from `url`, what follows the platform’s address."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "vhid": {
+                  "type": "string",
+                  "description": "The entry’s VHID."
+                },
+                "title": {
+                  "type": "string",
+                  "description": "The entry’s title."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The entry’s page."
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The handle as the entry lists it: on a platform that ignores case, its case may differ from the value asked."
+                },
+                "verified": {
+                  "type": "boolean",
+                  "description": "Whether the handle itself is verified on this entry (not the entry’s own badge)."
+                }
+              },
+              "required": [
+                "vhid",
+                "title",
+                "url",
+                "value",
+                "verified"
+              ],
+              "additionalProperties": {},
+              "description": "An entry that lists the handle."
+            },
+            "description": "Verified handles first, then by VHID; at most 50. Empty when no public entry lists it."
+          }
+        },
+        "required": [
+          "platform",
+          "value",
+          "results"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "The public entries that list a handle."
+      },
+      "annotations": {
+        "title": "Find entries by handle",
         "readOnlyHint": true,
         "openWorldHint": false
       },
@@ -1163,7 +1301,7 @@
                             "properties": {
                               "url": {
                                 "type": "string",
-                                "description": "The image, as a path on this site (`/img/w/480/<id>`)."
+                                "description": "The image, as a path on this site (`/img/w/480q75/<id>`)."
                               },
                               "main": {
                                 "type": "boolean",
@@ -1319,6 +1457,35 @@
                               "verified": {
                                 "type": "boolean",
                                 "description": "Verified Handles has checked that this account belongs to the entry."
+                              },
+                              "checked": {
+                                "description": "What Verified Handles’ own handle checker found when it last looked at this account, from the platform’s official API: only on YouTube (channel and handle), Deezer and GitHub, and only for a look at most 7 days old. Absent otherwise. The entry page shows it only for `dead` (“Not found when checked …”) and `renamed`.",
+                                "type": "object",
+                                "properties": {
+                                  "verdict": {
+                                    "type": "string",
+                                    "enum": [
+                                      "live",
+                                      "dead",
+                                      "renamed",
+                                      "unknown"
+                                    ],
+                                    "description": "`live`: the profile was there. `dead`: the platform did not find it. `renamed`: it answers under another name. `unknown`: the platform gave no answer a rule could read."
+                                  },
+                                  "at": {
+                                    "type": "string",
+                                    "description": "When it looked (ISO 8601, UTC)."
+                                  },
+                                  "now": {
+                                    "description": "For `renamed`, the name it answers to now, when the platform gave one. A YouTube handle’s is lowercase.",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "verdict",
+                                  "at"
+                                ],
+                                "additionalProperties": {}
                               }
                             },
                             "required": [
@@ -1601,6 +1768,11 @@
             "type": "string",
             "pattern": "^[0-9]+$"
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -1620,7 +1792,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -1628,6 +1800,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -1669,7 +1846,7 @@
     {
       "name": "update_entry_handles",
       "title": "Add or remove handles",
-      "description": "Add handles to an entry or remove them — a live edit, as the editor saves one (the whole list is sent, in the entry’s order, with yours added at the end). A handle you remove that the Wikidata sync supplied is held back so the sync does not bring it back. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "description": "Add handles to an entry or remove them — a live edit. Only the handles named are sent (add_handles / remove_handles), and the server applies them to the entry’s list as it is when it saves: an added handle goes at the end, one the entry has already, or one to remove that it has not, changes nothing (the answer’s handle_ops says which), and nothing is read first, so a handle someone else saved meanwhile is never undone. A handle you remove that the Wikidata sync supplied is held back so the sync does not bring it back. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1709,25 +1886,49 @@
             }
           },
           "remove": {
+            "description": "Handles to take off, each by its value — or, for an email this key may not see, by {platform_id: \"email\", ref}.",
             "maxItems": 50,
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "platform_id": {
-                  "type": "string",
-                  "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "platform_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                    },
+                    "value": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The handle as stored, e.g. \"nasa\"."
+                    }
+                  },
+                  "required": [
+                    "platform_id",
+                    "value"
+                  ]
                 },
-                "value": {
-                  "type": "string",
-                  "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                {
+                  "type": "object",
+                  "properties": {
+                    "platform_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The masked handle’s platform: \"email\"."
+                    },
+                    "ref": {
+                      "type": "string",
+                      "pattern": "^[0-9]{1,18}$",
+                      "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                    }
+                  },
+                  "required": [
+                    "platform_id",
+                    "ref"
+                  ]
                 }
-              },
-              "required": [
-                "platform_id",
-                "value"
               ]
             }
           },
@@ -1738,9 +1939,14 @@
             "maxLength": 200
           },
           "base_revision_id": {
-            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "description": "Not needed, and not sent: handles are added and removed against the entry as it is when the edit is saved.",
             "type": "string",
             "pattern": "^[0-9]+$"
+          },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
@@ -1761,7 +1967,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -1769,6 +1975,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -1974,6 +2185,11 @@
             "type": "string",
             "maxLength": 300
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -1993,7 +2209,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -2001,6 +2217,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -2195,6 +2416,11 @@
             "description": "true: all or nothing — if any edit is refused, none is made (the route answers 422 naming each refused edit). false (the default): each edit on its own.",
             "type": "boolean"
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -2214,7 +2440,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -2222,6 +2448,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -2383,6 +2614,11 @@
             "type": "string",
             "pattern": "^[0-9]+$"
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -2402,7 +2638,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -2410,6 +2646,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -2490,6 +2731,11 @@
             "type": "string",
             "pattern": "^[0-9]+$"
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -2509,7 +2755,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -2517,6 +2763,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -2600,6 +2851,11 @@
             "type": "string",
             "pattern": "^[0-9]+$"
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -2620,7 +2876,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -2628,6 +2884,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -2691,6 +2952,11 @@
             "minLength": 1,
             "maxLength": 2000
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -2711,7 +2977,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -2719,6 +2985,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -2945,7 +3216,7 @@
             }
           },
           "image_media_id": {
-            "description": "A new lead image already on the site (media_catalog, get_entry).",
+            "description": "A new lead image already on the site (media_catalog, get_entry), or one you uploaded held for this proposal (upload_image or upload_image_from_url with hold: true): only its uploader may propose a held image, and the approval releases it.",
             "type": "string",
             "pattern": "^[0-9]{1,18}$"
           },
@@ -3108,6 +3379,11 @@
             "minLength": 1,
             "maxLength": 2000
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -3127,7 +3403,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -3135,6 +3411,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -3176,7 +3457,7 @@
     {
       "name": "propose_new_entry",
       "title": "Propose a new entry",
-      "description": "Propose a new entry for a reviewer to decide: it waits in Console → Applications under Quick proposals (list_applications with tab \"proposals\") and becomes live when approved. Refused (not_accepting) while Settings pauses new-entry requests, unless this account may create entries itself. For someone or something with no Wikidata item, leave out qid. With qid, the entry is linked to that item, and after approval Wikidata keeps up to date whatever you did not write (and any field in let_wikidata_manage). Refused, naming the entry, when one is already on the item. A merged-away QID is refused (409 qid_merged), naming the item Wikidata kept in wikidata_item: propose on that one. Sending the same proposal again within 15 minutes answers with the first one. `note` tells the reviewer why. Audited. Dry run by default: it names the entries already on the item, a short name already taken, and handles already on another entry.",
+      "description": "Propose a new entry for a reviewer to decide: it waits in Console → Applications under Quick proposals (list_applications with tab \"proposals\") and becomes live when approved. Refused (not_accepting) while Settings pauses new-entry requests, unless this account may create entries itself. For someone or something with no Wikidata item, leave out qid. With qid, the entry is linked to that item, and after approval Wikidata keeps up to date whatever you did not write (and any field in let_wikidata_manage). Refused, naming the entry, when one is already on the item. A merged-away QID is refused (409 qid_merged), naming the item Wikidata kept in wikidata_item: propose on that one. Sending the same proposal again within 15 minutes answers with the first one. `note` tells the reviewer why. Audited. Dry run by default: it names the entries already on the item, a short name already taken or held by a site redirect (short_is_redirect), and handles already on another entry.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3250,6 +3531,11 @@
             "minLength": 1,
             "maxLength": 2000
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -3269,7 +3555,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -3277,6 +3563,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -3372,7 +3663,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -3380,6 +3671,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -3791,7 +4087,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -3799,6 +4095,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -3875,7 +4176,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -3883,6 +4184,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -3964,7 +4270,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -3972,6 +4278,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",
@@ -4051,6 +4362,11 @@
             "minLength": 1,
             "maxLength": 2000
           },
+          "idempotency_key": {
+            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "type": "string",
+            "pattern": "^[\\x20-\\x7E]{1,255}$"
+          },
           "dry_run": {
             "default": true,
             "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
@@ -4070,7 +4386,7 @@
             "type": "boolean"
           },
           "would_send": {
-            "description": "A dry run: the exact request the real run would send (`method`, `path`, and its `body`, `form` or `query`), or the requests, in order."
+            "description": "A dry run: the exact request the real run would send (`method`, `path`, any `headers` such as an Idempotency-Key, and its `body`, `form` or `query`), or the requests, in order."
           },
           "note": {
             "description": "A dry run: what to do next to make the change, in words."
@@ -4078,6 +4394,11 @@
           "confirm": {
             "description": "A dry run of a change that needs it: the exact target to send back as `confirm` with dry_run: false.",
             "type": "string"
+          },
+          "replayed": {
+            "description": "A real run with an idempotency_key already used for this change: the first call’s answer, given back; nothing was written now.",
+            "type": "boolean",
+            "const": true
           },
           "may_edit_live": {
             "description": "A dry run of a live edit: whether this key’s account may edit this entry live.",

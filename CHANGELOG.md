@@ -2,6 +2,54 @@
 
 The server gives its version in `serverInfo.version` when an agent connects. We only add within a major version; a change that would break a working client comes with a new one.
 
+## 1.23.1 · 11 October 2026
+
+- propose_new_entry’s dry run asks the site to check the proposal without queueing it (POST /api/entity?check=1), so refused_because now names what the real run would be refused for that the tool could not see before: a short name that is the address of a site redirect (short_is_redirect), a deleted entry or a merged-away item, a blocked word, or new entries paused.
+
+## 1.23.0 · 11 October 2026
+
+- propose_wikidata_correction takes move_to_item and copy_to_item: name a statement (qid, property, statement_guid, value_seen) and the item it goes to (other_qid). The site reads it live and files, on that item, a new statement with its whole value (a quantity’s range included), its qualifiers and its references exactly as read, at normal rank; a move then removes the statement, two steps of one group, the removal only once the copy is made and only while the statement is still exactly as read. A reference that cites a Wikimedia page is never copied: refused (wikimedia_reference) unless a reference is given to take its place. Refused when that item already states the value (already_listed) or a proposal to add it is open (already_proposed). The dry run’s would_file shows the new statement as the write wiki will get it (statement). propose_wikidata_changes takes either action as its only change.
+
+## 1.22.0 · 11 October 2026
+
+- find_by_handle, a public read that needs no key: which public entries list a handle — “is x.com/someone an official account, and whose?”. Give a profile’s address as url (https://x.com/someone, read as the editor reads a pasted one), or platform and value (twitter, someone or @someone). It answers each entry’s VHID, title and URL, the handle as the entry lists it and whether that handle is verified, verified first; an empty list when no entry lists it. Case is ignored where the platform ignores it; email addresses are not looked up. It is GET /api/v1/handles.
+
+## 1.21.0 · 11 October 2026
+
+- propose_wikidata_correction’s reference (add_claim, supersede, add_reference, replace_reference) takes "stated_in", an item id written as P248 “stated in” (the work or database the claim is made in, for a source with no stable page of its own, such as YouTube, Q8056784), alone or beside "url": "url" is no longer required when "stated_in" is given. A stated_in that is not an item id is refused (bad_reference), and one not on the write wiki (item_not_found); an add_reference stated in an item that a reference of the statement already states is already_referenced. A "url" on a Wikimedia project (wikidata.org, any Wikipedia, Commons, the other projects and w.wiki; an old revision included) is refused: wikimedia_reference, with “A reference must be the outside source, not a Wikimedia page: …”. The dry run’s would_file shows a statement’s or a reference’s reference as the write wiki will get it (reference_snaks, by that wiki’s ids).
+
+## 1.20.0 · 11 October 2026
+
+- propose_wikidata_correction takes a quantity’s range: wherever it takes a quantity (value, new_value, a qualifier’s value), {"amount","unit"} may carry "lowerBound" and "upperBound" — both or neither, decimals as the amount is, with the amount between them, else bad_value / bad_new_value / bad_qualifier with “A range needs both a lower and an upper bound, with the amount between them.” A bare amount and {"amount","unit"} are unchanged. A move left without new_value keeps the statement’s range. A quantity is compared whole: a range set on Wikidata since you read it, that still holds what you read, is no change (nor is a quantity qualifier whose hash moved for it); a set_value of the range alone (set or changed) is a change, made only while the range is as you read it, but one that only takes a range off is refused (bad_new_value) for now; and a quantity is already listed when the property states the same amount and unit, or a range of the same unit that holds its amount. value_seen keeps its words (“17000”); a set_value’s or a move’s new_value names the range, “17000 (17000–17099)”, as the review shows it.
+
+## 1.19.0 · 10 October 2026
+
+- create_path_redirect (and Console → Redirects) takes a key that is a path: letters, digits, “-”, “_” and “.”, in parts split by “/”, e.g. "vh-internal/index.php" for /vh-internal/index.php (at most 64; never ending in ".json"). Its first part follows the rules a one-word key did (never 11 digits, a page of the site’s own, or an entry’s short name, VHID or old address); its second is never an entry page’s (history, edit, …). A one-word key is unchanged, and the dry run’s test link names the path as it is.
+
+## 1.18.0 · 9 October 2026
+
+- Bing, for administrators, beside the Search Console tools: bing_report (Bing Webmaster Tools’ clicks and impressions, top queries and pages by Bing’s weekly periods, crawl days, crawl issues, sitemaps and page details, from what the site has fetched from Bing, by default the last 28 days stored as one total; filtered by query, page or entry), bing_sitemaps (the sitemaps Bing lists, whether this instance may resubmit one, and the last automatic resubmission after a release) and resubmit_bing_sitemap (by default /sitemap.xml; dry run by default, which asks Bing nothing). The resubmission is refused everywhere but production, before anything is sent to Bing, and is audited with Bing’s answer.
+
+## 1.17.0 · 9 October 2026
+
+- The tools that write through the entry routes — update_entry_fields, update_entry_handles, set_entry_image, set_entry_gallery, set_wikidata_ownership, update_entries, propose_entry_change, propose_entry_changes, propose_entry_revert, propose_from_wikidata and propose_new_entry — take an optional idempotency_key (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling the tool again with the same key and the same change within 24 hours answers the first call’s result, marked replayed: true, and writes nothing; the same key with another change is refused (422 idempotency_key_reused), and while the first call is still running, 409 idempotency_key_in_progress. A dry run shows the header in would_send. A tool that re-reads the entry before writing still matches its first call: the base revision is not part of what is compared. update_entries’ confirm digest still names the request’s base revisions: give each edit its base_revision_id from the dry run, and a retry sends the same request.
+
+## 1.16.0 · 9 October 2026
+
+- update_entry_handles, update_entries, propose_entry_change and propose_entry_changes send the handles you add and remove as ops (add_handles / remove_handles), no longer the entry’s whole list: the server applies them to the list as it is when the edit is saved, or when the proposal is approved, so nothing is read first, an edit of handles alone carries no base revision, and two edits adding different handles never undo each other. An add of a handle the entry has, or a remove of one it has not, is no longer refused before sending: it changes nothing, and the route’s answer says so (handle_ops: added, removed, already_present, not_present; an edit of nothing else answers 400 no_changes). The dry runs show the ops in would_send and list in changes which would change nothing now (already_listed, not_listed). update_entry_handles’ remove takes an email this key may not see by its ref, and its base_revision_id is no longer sent. propose_entry_change with handle_order still sends the whole list, which an order is of.
+
+## 1.15.0 · 9 October 2026
+
+- Site redirects, for administrators: list_path_redirects lists Console → Redirects (each /<key> that 301s to a path on this site, with who added it, when and its note); create_path_redirect adds one and delete_path_redirect deletes one, as the page’s forms do. The key is one word that nothing on the site already answers for (an entry’s short name, VHID or old address, a page of the site’s own, another redirect’s key or target); the target is a same-site path, never another site, its own address or an address that redirects itself. Both writes are dry runs by default; the delete needs confirm set to the redirect’s exact key. Each is audited with the key and the tool, and takes the address off the site’s cache at once. A short name a redirect holds is refused to every entry write (short_is_redirect) until the redirect is deleted.
+
+## 1.14.0 · 9 October 2026
+
+- upload_image and upload_image_from_url take hold: true, which stores the image held for a proposal: /img serves it only to its uploader and to reviewers (private, never cached), it is in no list (the picker, media_catalog, the media API), and no live edit may use it. Only its uploader may name it in propose_entry_change (image_media_id or gallery); a reviewer’s approval of that proposal releases it, in the same step, and it is then an ordinary image. A rejected, withdrawn or superseded proposal leaves it held, never deleted. The real run answers held: true and seen_at in place of public_at; a dry run of propose_entry_change names a held image (held_image). Each hold, release and park is audited with the key and the tool.
+
+## 1.13.0 · 9 October 2026
+
+- upload_image uploads an image file you hold, sent as base64 with its file name, licence, credit and source, through the same upload as the editor’s “upload a file”: the same upload-images permission, 20 a minute, rights check and re-encode to WebP, audited with the key, the tool and the file name. At most 10 MB of file (base64 over that is refused before it is decoded); the site’s front end currently takes a request of at most 11 MB, so about 8 MB of file through this tool. Like upload_image_from_url, the image is public by its id once stored, before any review, and the real run answers its mediaId for propose_entry_change. Dry run by default; every run needs confirm_rights: true.
+
 ## 1.12.0 · 9 October 2026
 
 - set_entry_kind sets the kind of an entry with no Wikidata item (the Entry Manager’s Kind: museum, musical group, company and the rest, or null to clear it), as a revision, for an administrator. Its dry run says when the entry has an item, whose kind comes from Wikidata and which the server refuses.

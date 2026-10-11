@@ -274,7 +274,7 @@
                       "properties": {
                         "url": {
                           "type": "string",
-                          "description": "The image, as a path on this site (`/img/w/480/<id>`)."
+                          "description": "The image, as a path on this site (`/img/w/480q75/<id>`)."
                         },
                         "main": {
                           "type": "boolean",
@@ -430,6 +430,35 @@
                         "verified": {
                           "type": "boolean",
                           "description": "Verified Handles has checked that this account belongs to the entry."
+                        },
+                        "checked": {
+                          "description": "What Verified Handles’ own handle checker found when it last looked at this account, from the platform’s official API: only on YouTube (channel and handle), Deezer and GitHub, and only for a look at most 7 days old. Absent otherwise. The entry page shows it only for `dead` (“Not found when checked …”) and `renamed`.",
+                          "type": "object",
+                          "properties": {
+                            "verdict": {
+                              "type": "string",
+                              "enum": [
+                                "live",
+                                "dead",
+                                "renamed",
+                                "unknown"
+                              ],
+                              "description": "`live`: the profile was there. `dead`: the platform did not find it. `renamed`: it answers under another name. `unknown`: the platform gave no answer a rule could read."
+                            },
+                            "at": {
+                              "type": "string",
+                              "description": "When it looked (ISO 8601, UTC)."
+                            },
+                            "now": {
+                              "description": "For `renamed`, the name it answers to now, when the platform gave one. A YouTube handle’s is lowercase.",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "verdict",
+                            "at"
+                          ],
+                          "additionalProperties": {}
                         }
                       },
                       "required": [
@@ -648,6 +677,115 @@
       },
       "annotations": {
         "title": "Search entries",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          },
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "find_by_handle",
+      "title": "Find entries by handle",
+      "description": "Which public entries list a handle: “is x.com/someone an official account, and whose?”. Give a profile’s address as url (https://x.com/someone), or platform (its catalog id: twitter, instagram, youtube, …) and value (someone or @someone). Answers each entry’s VHID, title and URL, the handle as the entry lists it, and whether that handle is verified; an empty list when no entry lists it. Case is ignored where the platform ignores it. Email addresses are not looked up.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "description": "A profile’s address, such as https://x.com/someone. Instead of platform and value.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "platform": {
+            "description": "The platform’s catalog id, such as twitter. With value.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "value": {
+            "description": "The handle on that platform, such as someone or @someone.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "description": "The platform looked on: the one asked, or the one whose address `url` is."
+          },
+          "value": {
+            "type": "string",
+            "description": "The handle looked up, as the site stores one: from `url`, what follows the platform’s address."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "vhid": {
+                  "type": "string",
+                  "description": "The entry’s VHID."
+                },
+                "title": {
+                  "type": "string",
+                  "description": "The entry’s title."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The entry’s page."
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The handle as the entry lists it: on a platform that ignores case, its case may differ from the value asked."
+                },
+                "verified": {
+                  "type": "boolean",
+                  "description": "Whether the handle itself is verified on this entry (not the entry’s own badge)."
+                }
+              },
+              "required": [
+                "vhid",
+                "title",
+                "url",
+                "value",
+                "verified"
+              ],
+              "additionalProperties": {},
+              "description": "An entry that lists the handle."
+            },
+            "description": "Verified handles first, then by VHID; at most 50. Empty when no public entry lists it."
+          }
+        },
+        "required": [
+          "platform",
+          "value",
+          "results"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": {},
+        "description": "The public entries that list a handle."
+      },
+      "annotations": {
+        "title": "Find entries by handle",
         "readOnlyHint": true,
         "openWorldHint": false
       },
@@ -1163,7 +1301,7 @@
                             "properties": {
                               "url": {
                                 "type": "string",
-                                "description": "The image, as a path on this site (`/img/w/480/<id>`)."
+                                "description": "The image, as a path on this site (`/img/w/480q75/<id>`)."
                               },
                               "main": {
                                 "type": "boolean",
@@ -1319,6 +1457,35 @@
                               "verified": {
                                 "type": "boolean",
                                 "description": "Verified Handles has checked that this account belongs to the entry."
+                              },
+                              "checked": {
+                                "description": "What Verified Handles’ own handle checker found when it last looked at this account, from the platform’s official API: only on YouTube (channel and handle), Deezer and GitHub, and only for a look at most 7 days old. Absent otherwise. The entry page shows it only for `dead` (“Not found when checked …”) and `renamed`.",
+                                "type": "object",
+                                "properties": {
+                                  "verdict": {
+                                    "type": "string",
+                                    "enum": [
+                                      "live",
+                                      "dead",
+                                      "renamed",
+                                      "unknown"
+                                    ],
+                                    "description": "`live`: the profile was there. `dead`: the platform did not find it. `renamed`: it answers under another name. `unknown`: the platform gave no answer a rule could read."
+                                  },
+                                  "at": {
+                                    "type": "string",
+                                    "description": "When it looked (ISO 8601, UTC)."
+                                  },
+                                  "now": {
+                                    "description": "For `renamed`, the name it answers to now, when the platform gave one. A YouTube handle’s is lowercase.",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "verdict",
+                                  "at"
+                                ],
+                                "additionalProperties": {}
                               }
                             },
                             "required": [
