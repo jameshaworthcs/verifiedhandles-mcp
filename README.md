@@ -4,7 +4,7 @@
 
 This repository holds what you need to connect to it: the server itself runs at `https://verifiedhandles.org/mcp`, and its code is not here. The full guide, with every tool, is at https://verifiedhandles.org/developers/mcp.
 
-- **Version** 1.28.0: what changed is in [CHANGELOG.md](CHANGELOG.md).
+- **Version** 1.33.0: what changed is in [CHANGELOG.md](CHANGELOG.md).
 - **The tools**, as the server lists them: [with no key](tools/no-key.json) and [with a registered account’s key](tools/registered-key.json), each with its input and output schemas.
 - **A Claude Desktop extension** to install in one click: [mcpb/](mcpb/).
 - **The MCP Registry listing**: [server.json](server.json).

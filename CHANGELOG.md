@@ -2,6 +2,27 @@
 
 The server gives its version in `serverInfo.version` when an agent connects. We only add within a major version; a change that would break a working client comes with a new one.
 
+## 1.33.0 · 12 October 2026
+
+- get_entry_admin: `entity.retry_at`, when the sync tries the entry again after its last fetch from Wikidata failed (null when it did not fail). `synced_at` now only ever says when the sync last read the entry: a failed fetch no longer moves it.
+
+## 1.32.0 · 12 October 2026
+
+- propose_from_wikidata: copying an item’s handles, a handle the entry already has is now found by the key the site stores (letter case folded as the site folds it), so one that differs only by a letter whose case the site and a client fold differently (İx and ix on X) is no longer proposed again, a proposal the save refused whole. Its dry run’s `item.handles` carries each handle’s `value_norm`, as GET /api/wikidata/items/{qid} now does, beside the entry’s own in GET /api/editor/{vhid}.
+- set_entry_setting and bulk_change_entries take follow_links: follow this entry’s handle links (its handle links are followed as a verified entry’s are), as the Entry manager’s switch does.
+
+## 1.31.0 · 11 October 2026
+
+- list_wikidata_corrections: a new kind it lists and filters by, bluesky_did — the suggestion job’s Bluesky DID (P12409) added as a qualifier on an item’s Bluesky handle (P12361) statement that has none, where the entry holds the handle and Bluesky gives its DID. Always an add_qualifier, reviewed by an administrator and made only while adding identifiers is switched on; never a kind a person may claim.
+
+## 1.30.0 · 11 October 2026
+
+- list_wikidata_corrections: a new kind it lists and filters by, discord_pair — the suggestion job’s Discord invite (P9078) added as a qualifier on an item’s Discord server ID (P9345) statement that has none, where the entry holds both. Always an add_qualifier, reviewed by an administrator and made only while adding identifiers is switched on; never a kind a person may claim.
+
+## 1.29.0 · 11 October 2026
+
+- New tool dismiss_wikidata_candidate: for an entry with no Wikidata item, set aside an item only its name found as not its subject (Console → Wikidata → Not on Wikidata’s “Not this item”), or put it back (undo: true). Once every item its name finds is set aside, the entry is “Not found on Wikidata” and may be proposed as a new item. Audited on the entry; nothing is written to Wikidata. Needs the Wikidata write-back permission. Dry run by default.
+
 ## 1.28.0 · 11 October 2026
 
 - propose_wikidata_correction and propose_wikidata_changes: a preferred rank (set_rank, add_claim, supersede) that outranks only point-in-time values (each with a point in time, P585, and no start or end time: a follower count P8687, a population, a revenue) is no longer refused rank_choice_required: the newer value takes the preferred rank and the older ones stay normal with no end time, the dry run still naming them in makes_not_current (the step’s evidence.outranks_choice is "point_in_time"). `outranked` takes "point_in_time" to ask for that by name, refused not_point_in_time (naming them in not_point_in_time) when one of them has no point in time, or has a start or end time. Mixed cases still need "end_date" or "leave_normal".
