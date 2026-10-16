@@ -1693,7 +1693,7 @@
     {
       "name": "update_entry_fields",
       "title": "Edit an entry’s text",
-      "description": "Change an entry’s title, subtitle, description or short name, or remove its “from Wikipedia” credit or name the Wikipedia page it came from — a live edit, as the editor saves one: a new revision, audited. Give only what changes; null clears a field. The description is HTML (sanitised on save). A field you change here is no longer managed by the Wikidata sync. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "description": "Change an entry’s title, subtitle, description or short name, or remove its “from Wikipedia” credit or name the Wikipedia page it came from — a live edit, as the editor saves one: a new revision, audited. Give only what changes; null clears a field. The description is HTML (sanitised on save). A field you change here is no longer managed by the Wikidata sync; to hand one back, so the next sync refreshes it from the item, use set_wikidata_ownership (relinquish_fields). Dry run by default. To ask a reviewer instead, use propose_entry_change.",
       "inputSchema": {
         "type": "object",
         "properties": {

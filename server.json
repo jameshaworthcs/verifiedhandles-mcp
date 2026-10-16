@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "org.verifiedhandles/verified-handles",
   "title": "Verified Handles",
-  "description": "Look up people, organisations and things, and their verified social handles and identifiers.",
-  "version": "1.33.0",
+  "description": "Look up people, organisations and things, and their official social media accounts and identifiers.",
+  "version": "1.59.1",
   "websiteUrl": "https://verifiedhandles.org/developers/mcp",
   "repository": {
     "url": "https://github.com/jameshaworthcs/verifiedhandles-mcp",

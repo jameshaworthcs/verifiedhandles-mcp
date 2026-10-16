@@ -1,6 +1,6 @@
 {
   "name": "verified-handles-mcpb",
-  "version": "1.33.0",
+  "version": "1.59.1",
   "private": true,
   "type": "module",
   "dependencies": {

@@ -2,6 +2,125 @@
 
 The server gives its version in `serverInfo.version` when an agent connects. We only add within a major version; a change that would break a working client comes with a new one.
 
+## 1.59.1 · 16 October 2026
+
+- The server’s instructions, its `serverInfo.description`, the server card’s and the MCP Registry listing’s description and the AI catalogue’s queries now say “official social media accounts”, not “verified social handles”: most entries carry no badge, and “Verified” is the badge’s word. No tool changed.
+
+## 1.59.0 · 16 October 2026
+
+- propose_wikidata_correction: a proposal on a statement where another person’s change to something else is open (another qualifier, a reference, the value beside a qualifier) no longer closes it: it is joined to that open change as its next step, one group made in that order and one card on Review. The answer’s new `joined` names the open change and `group_id` the group; the dry run’s new `joins` names it, and `warning` says “Joined to the open change #N (…) as its next step: …”. The same thing again (the value, the rank, the same qualifier property, the same reference) still replaces it (`replaces`, `replaced`).
+- propose_wikidata_correction: a set_value, remove or move dry run now has the site check it too, as every other action’s does: `would_file`, and `replaces` / `joins` and `warning`, beside `entries_on_item` (or `refused_because` with the site’s `refusal`).
+
+## 1.58.0 · 16 October 2026
+
+- annotate_wikidata_correction: a verdict replaces any machine’s verdict before it, its own or another’s, only with `notes` saying what changed (409 `notes_required` without); the handle checker’s small model (`handle-checker/classify-small`) never replaces another model’s (409 `small_model_outranked`). The answer’s new `replaced` is the verdict it replaced (null with none), kept in the audit as `before`. The dry run shows it as `replaces`, and says when the verdict would be refused.
+
+## 1.57.0 · 15 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes: a reference whose `url` or `archive_url` is Verified Handles’ own page (this site’s, or verifiedhandles.org’s) is no longer refused (422 `own_site_reference`): it is filed with the warning `own_site_reference`, for the reviewer to keep only where Verified Handles is genuinely the source. propose_wikidata_item: a statement with such a reference is no longer refused either, and its dry run and answer warn of it in `warnings`.
+- propose_wikidata_correction and propose_wikidata_changes: new warning `missing_display_name`, a new TikTok, Instagram, Threads, Twitch or X account statement (P7085, P2003, P11892, P5797, P2002) with no “subject named as” (P1810) qualifier: add the account’s display name as the platform shows it. It is filed all the same. A YouTube channel (P2397) without its title is still refused (`channel_without_title`).
+
+## 1.56.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes: a reference whose `url` or `archive_url` is Verified Handles’ own page (this site’s, or verifiedhandles.org’s) is refused (422 `own_site_reference`, with a `message`): cite the page the subject published. New warning `range_too_wide`: a YouTube count whose range starts at its amount but is wider than YouTube’s rounding (“1.7M” is 1700000 to 1709999). `stated_in_mismatch` also warns on a reference stated in a platform’s item (the YouTube API, Q8056784) for an identifier that is none of that platform’s (an Apple Music artist ID, a Patreon ID), and knows Apple Music (P2850), Spotify (P1902) and Deezer (P2722).
+
+## 1.55.0 · 13 October 2026
+
+- list_wikidata_corrections: each correction’s `related`, the other open corrections on its item, outside its proposal, to decide with it, each `{id, how}` (`statement`, the same statement; `replaced_by`, it adds what replaces the value this one retires; `replaces`, the other way round; `property`, one of the two makes a value of the same property the preferred one), strongest first; [] with none. Two follower counts (P8687) of different accounts, both known, are no longer linked.
+- dismiss_wikidata_correction: the answer’s `related` names the open corrections filed apart to decide with those dismissed, which stay open (at most 10), and its message says so. Nothing more is dismissed: each is the caller’s to dismiss, or not.
+
+## 1.54.0 · 13 October 2026
+
+- list_wikidata_corrections takes `min_score` and `max_score` (0 to 1, both inclusive): the row’s score, `confidence.score`, how likely it is right as filed, as Review’s *Score at least* / *at most* narrow by it (0.9 and up is the high band). Each row’s `confidence.parts` can now also say `channel_linked` (a renamed YouTube handle tied to the channel that names its new one by the item’s own qualifier or the checker’s look, `by`), `title_named` (the channel’s title names the subject) and `title_mismatch` (it names no one the subject is called). The score is advice: listing by it is reading, and only a person approves.
+
+## 1.53.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes: `reference_misses_claim` reads more. A move or copy to another item (move_to_item, copy_to_item) has the reference given in its place read for the claim too, of the item it goes to, and keeps `evidence.reference_read`. An account or other value that is not an address is no longer taken as shown by the site’s own addresses (sombrmusic on sombrmusic.com, the Bluesky handle fastly.com on fastly.com), nor by a link inside an HTML comment. A value the page holds only in its script data, on a page that shows its text without it, is warned (“holds … only in its script data, not in its text or links”), kept as `evidence.reference_read.script_only`; a JSON-LD block (a site’s `sameAs`) still counts as shown. An item value is also found by its English aliases.
+
+## 1.52.0 · 13 October 2026
+
+- New tool propose_wikidata_item: propose a new Wikidata item with its own statements (each as add_claim takes one, every one with its reference), its English label, description and aliases, `evidence.why` and `notability` (the Wikidata:Notability criterion relied on), for an entry with no item (`entry`, linked to it once made) or for no entry at all (an event). One card in Console → Wikidata → Review; an administrator ticks it notable and approves it, and VH makes it in one edit. Dry run by default: the item as it would be made (`would_create`), and `warnings` (with `twins`) when an item on the write wiki has its label and description or one of its identifier values already.
+- propose_wikidata_correction and propose_wikidata_changes: a supersede’s refusal names the field to change (`field`) and says, in `message`, what a supersede takes (`property`, `statement_guid`, `value`, `date`, `reference`, optionally `qualifiers`): `new_value` given for `value`, `end_date` for `date`, or a kind other than `superseded` (a renamed account is `superseded`).
+
+## 1.51.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes refuse a whole number past 9007199254740991 sent as a JSON number in a value, a new value or a qualifier’s value (a 64-bit id, such as a Discord server ID: 966627436387266561 arrives rounded, as 966627436387266600), with a message saying to send it as a string; the route refuses it too (400 `value_must_be_string`, with `message`, and `step` in a group). A smaller whole number is still filed as its digits.
+- propose_wikidata_correction and propose_wikidata_changes take a time of unknown value, {"unknown": true}, as an add_qualifier’s or change_qualifier’s value (a start, end or point in time; any other qualifier is refused bad_qualifier with a message), as a preferred rank’s end_date and as a supersede’s date (the old value ends on unknown value, the new one gets no start time). It is filed with new_value null and evidence.qualifier {"datatype":"time","snaktype":"somevalue"}, shown on Review as “unknown value” and sent as Wikidata’s unknown value. made_up_date’s suggestion now says to send it.
+- propose_wikidata_correction and propose_wikidata_changes: a reference takes `archive_url`, a web archive’s https copy of its `url`, and `archive_date` (YYYY-MM-DD; read from a web.archive.org or archive.today address when left out). The site loads the copy instead of the original, which is kept as given (http or https) and never fetched, so a page that is gone can still be cited; it is written as archive URL (P1065) and archive date (P2960) after the reference URL, and shown on Review. archive_as_reference’s suggestion now names the two fields.
+
+## 1.50.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes check four more of the owner’s Wikidata conventions as a proposal is filed, from the review of 2026-10-13. One more refusal (400, with `message`, `suggestion` and `refusals`): `superseded_in_place`, kind `superseded` filed as a set_value. Four more warnings (filed anyway, in `warnings` and kept on the row): `other_current_values` (a dead account deprecated beside a current value of its property), `outdated_not_wrong` (a value deprecated as “changed username”, “redirect” or “cannot be confirmed by other sources” while the item or a VH entry holds another value of its property), `handle_differs_from_channel` (a YouTube handle that is not the one the handle checker last saw its channel with) and `second_date_on_statement` (a second year put on one award or nomination statement).
+
+## 1.49.0 · 13 October 2026
+
+- propose_wikidata_correction, propose_wikidata_changes and the deprecation tools ask Wikimedia’s spam blacklist about a reference’s address (and a deprecation’s source) once its page has loaded: one the blacklist blocks is refused 422 `source_blacklisted`, with `matches` (what the blacklist matched) and `message`, and nothing is filed, since Wikidata would refuse the edit that cites it. Give another page.
+
+## 1.48.0 · 13 October 2026
+
+- get_reconcile: each handle carries `remove_after`, when the sync takes a handle it keeps off VH (the item deprecated, ended or no longer states it), not before; null otherwise. A handle the sync keeps that the item ended is no longer offered `remove_qualifier` (“Remove the end time”): VH has it only because Wikidata listed it, so `propose` is null and the sync takes it off VH instead. A handle a person keeps is still offered it.
+
+## 1.47.0 · 13 October 2026
+
+- commons_rights_pass (and `commons_rights_pass` in sync_state) answers `estimated_finish_from` (`measured` or `cap`) and `images_per_day`: `estimated_finish` comes from the rate the pass’s requests of the last day kept, never above its cap, once it has made six, and from its cap until then. The pass now steps beside a routine batch, under its own lock, so `phase` is `waiting_for_lock` only while a due request waits for the priority queue or another server process’s step.
+
+## 1.46.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes read the reference’s page, as it loads to be cited, for the claim: one more warning (filed anyway, in `warnings` and on the row’s `evidence.checks`, a dry run’s too), `reference_misses_claim`, when the page does not show the identifier, text or address it is cited for, or names neither the value nor the subject. A page that draws its text by script, or is cut at the size VH reads, is never refused for it. The row keeps what was read as `evidence.reference_read`.
+
+## 1.45.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes check more of the owner’s Wikidata conventions as a proposal is filed. Three more refusals (400, with `message`, `suggestion` and `step`, nothing filed): `archive_as_reference` (a reference url that is a web archive’s copy), `claim_already_present` (an add_claim the item states already, its qualifiers included), `bluesky_handle_without_did` (a Bluesky handle set_value on a statement with no DID, none added). New warnings: `count_not_preferred`, `same_account_still_preferred` (a new preferred count beside its account’s preferred one, on the item or by another open proposal, which it names; before, the first of these was `depends_on_other_proposal`, which now means a demotion with no newer count alone), `made_up_date`, `stated_in_mismatch`, `rounded_count_exact`, `remove_with_reference`, `single_best_second_normal`, `alias_duplicates_mul` and `generic_reference_title`.
+
+## 1.44.0 · 13 October 2026
+
+- New tool list_wikidata_wrong_subject_pairs: Console → Wikidata → To judge’s “One account on two subjects”, the pairs of items that state one account or identifier but that the identity check says are two subjects, with every value both state, what each side’s statement cites, and why they are two subjects. propose_wikidata_correction takes kind wrong_subject with action deprecate and `belongs_to`: the value deprecated on `qid`, the item it does not belong to, filed while VH may still list it, only while both items state it and the pair is still refused (read live, and again just before it is made), with the reason the site picks (“refers to different person” on a human, else “refers to different subject”).
+
+## 1.43.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes: an add_claim whose value is a Commons file (an image P18, a logo P154, a coat of arms P94, any property of that datatype) may come without a `reference`, as Wikidata asks none of it; the dry run then shows none, and Review says “No reference: a Commons file is documented on Commons.” Any other new statement still needs one (`reference_required`).
+- The dismissal memory compares the whole value written as well: a dismissed change is the same one only with the same quantity range, and for a new statement the same qualifiers and rank, so a correction dismissed as filed wrong (a count’s range, say) files again once corrected, without `refile`.
+
+## 1.42.0 · 13 October 2026
+
+- keep_wikidata_deleted_entry (new): Deleted on Wikidata’s “Keep, still linked” — an entry in “To review” comes off it and stays exactly as it is, linked to its deleted item, so a restore on Wikidata resumes its sync and it is never offered as a new item; `reason` is recorded; `undo: true` puts it back to “To review”. Dry run by default; audited.
+- wikidata_deleted_entries takes view: "kept" (each row’s `kept`: by, at, reason and the deletion it was kept for), and every count has `kept`; “review” no longer lists kept entries.
+
+## 1.41.0 · 13 October 2026
+
+- get_entry’s editing.image carries `license_name`: an upload’s licence by name, or a Commons file’s as the sync read it from the file page (“CC BY 3.0”). `license` stays an upload’s licence id, null for every Commons file; the licence was in image_rights.license_name all along.
+- set_entry_kind sets the kind of an entry whose stored QID is the legacy Q0 placeholder, which names no item, as it does on an entry with none; its dry run no longer says the server refuses it.
+- update_entry_fields and restore_wikipedia_credit name set_wikidata_ownership (relinquish_fields) as the way to hand a field back to the Wikidata sync.
+
+## 1.40.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes: a newer point-in-time value at preferred rank (add_claim, set_rank) now also sets to normal each older value of its series that is preferred itself, the same account (an identifier qualifier in common, e.g. P6552) or, for a series with none, none: a set_rank normal step after it in the same group, with its “most recent value” (P7452 Q71533355) taken off by a remove_qualifier step first, each named in makes_not_current. Another account’s preferred count is left alone, and so is a statement another change of the proposal names itself.
+
+## 1.39.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes take `refile`: a change a person dismissed before (the same kind, action, statement, value seen, new value and new property) is refused 409 `dismissed`, now with `dismissed_id`, `dismissed_at`, a `message` and, for a group, the `step`; sent again with `refile: true` it is filed anyway, its evidence and audit naming the dismissed row. A dismissal of another change on the statement no longer refuses a proposal, so a row dismissed for its wrong reason is corrected by proposing the right one (dismiss_wikidata_correction says so).
+
+## 1.38.0 · 13 October 2026
+
+- list_wikidata_corrections takes four more of Review’s filters: `generator` (the rule that filed a correction, whole, as list_wikidata_feedback names it, e.g. job/dead_account:gone_only_value), `verdict_by` (who gave its machine verdict, whole), and `min_confidence` and `max_confidence` (that verdict’s confidence, 0 to 1; a correction with no confidence never matches either).
+
+## 1.37.0 · 13 October 2026
+
+- propose_wikidata_correction and propose_wikidata_changes: the owner’s Wikidata conventions, checked as a proposal is filed (dry run included). Refused, with a `message` and a `suggestion` saying exactly what to add, and nothing filed: a new YouTube channel ID statement (P2397) with no “subject named as” (P1810) title (`channel_without_title`), and a YouTube handle (P11245) whose P2397 qualifier names a channel the item does not state and no earlier change adds (`handle_without_channel`). Filed with `warnings` (each `code`, `step`, `message`, `suggestion`; also in `warning`, and kept on the row for the reviewer): `range_not_rounded_down`, `preferred_outranks_other_accounts`, `replacement_deprecated`, `depends_on_other_proposal`.
+
+## 1.36.0 · 13 October 2026
+
+- list_wikidata_feedback (new): what reviewers said about Wikidata corrections (Console → Wikidata → Feedback), each piece with the correction as it was when filed and the generator that filed it, its category, scope, text and its own state (open, addressed or wont_fix); filters state, category, kind, origin, generator and since; with include_dismissals, also the reasons Dismiss kept before, read-only.
+- resolve_wikidata_feedback (new): close one open piece of feedback as addressed or wont_fix with a note (a commit, a backlog row, a reason). It never changes the correction. Dry run by default; audited.
+
+## 1.35.0 · 13 October 2026
+
+- list_wikidata_corrections takes Review’s filters, by the names the console’s list uses: `value` (the statement value, whole and case-insensitive, a merge’s shared value included), `q` (words, or a "quoted phrase", that must all appear in the reason, summary, verdict notes or entry title), `action`, `ids` (a list or ranges, at most 500), `from` and `to` (found on or after / on or before a UTC day), `found` (why the job proposed it, e.g. shared_value), and the console’s older `property`, `entry`, `age`, `origin` and `verdict`. A filter the site does not understand is refused, never ignored.
+
+## 1.34.0 · 12 October 2026
+
+- list_wikidata_corrections: each correction’s `description`, what the entry says its subject is, as plain text of at most 300 characters: the entry’s subtitle (the item’s English description, where the Wikidata sync keeps it), else the start of its description; null with neither, or no entry.
+
 ## 1.33.0 · 12 October 2026
 
 - get_entry_admin: `entity.retry_at`, when the sync tries the entry again after its last fetch from Wikidata failed (null when it did not fail). `synced_at` now only ever says when the sync last read the entry: a failed fetch no longer moves it.

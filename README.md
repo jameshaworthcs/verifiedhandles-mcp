@@ -1,10 +1,10 @@
 # Verified Handles MCP server
 
-[Verified Handles](https://verifiedhandles.org) lists people, organisations and things with their verified social handles and other identifiers. Its MCP server lets an AI agent look entries up, search them and read their history with no key, and, with your key or your account, do what you can do on the site.
+[Verified Handles](https://verifiedhandles.org) lists people, organisations and things with their official social media accounts and other identifiers. Its MCP server lets an AI agent look entries up, search them and read their history with no key, and, with your key or your account, do what you can do on the site.
 
 This repository holds what you need to connect to it: the server itself runs at `https://verifiedhandles.org/mcp`, and its code is not here. The full guide, with every tool, is at https://verifiedhandles.org/developers/mcp.
 
-- **Version** 1.33.0: what changed is in [CHANGELOG.md](CHANGELOG.md).
+- **Version** 1.59.1: what changed is in [CHANGELOG.md](CHANGELOG.md).
 - **The tools**, as the server lists them: [with no key](tools/no-key.json) and [with a registered account’s key](tools/registered-key.json), each with its input and output schemas.
 - **A Claude Desktop extension** to install in one click: [mcpb/](mcpb/).
 - **The MCP Registry listing**: [server.json](server.json).
@@ -19,6 +19,8 @@ MCP, the Model Context Protocol, is how an AI agent (Claude, Cursor, Copilot and
 Every tool goes through the same routes and checks as the site and the rest of the API: an agent can do nothing you could not do yourself, and with a key it acts as you. Nothing is changed by accident: every tool that changes something only shows what it would do until it is told otherwise (see [dry runs](https://verifiedhandles.org/developers/mcp#dry-run)).
 
 The server is listed in the MCP Registry as `org.verifiedhandles/verified-handles`, and its setup guides, changelog and [a Claude Desktop extension](https://github.com/jameshaworthcs/verifiedhandles-mcp/releases/latest/download/verified-handles.mcpb) are [on GitHub](https://github.com/jameshaworthcs/verifiedhandles-mcp).
+
+Before connecting, a client can read the server’s card, with its name, version and addresses, at `https://verifiedhandles.org/mcp/server-card`. Agent finders find the server, and the read API, in `https://verifiedhandles.org/.well-known/ard.json`.
 
 ## No key, a read-only key, or a full key
 
@@ -241,6 +243,25 @@ curl -s https://verifiedhandles.org/mcp \
 A change that destroys something or affects the whole site also needs `confirm`, set to the exact target the dry run names (an entry’s VHID, say), so it is never made by accident.
 
 To change an entry without it going live, **propose** it: the `propose_*` tools send it to a reviewer, as a suggestion on the site does, and nothing changes until a person approves it. Sending the same proposal again answers with the one already waiting. Each tool that edits live names the tool that proposes the same change instead.
+
+## In your browser (WebMCP)
+
+WebMCP is how an AI agent that runs in your own browser, beside the page you are on, uses the site. There is no address to connect to and no key: the site’s pages offer the agent tools, and each tool runs in the page.
+
+**On every page**, five tools read the public record, and can do nothing a signed-out visitor could not:
+
+- [`search_entries`](https://verifiedhandles.org/developers/mcp#mcp-search_entries), [`get_entry`](https://verifiedhandles.org/developers/mcp#mcp-get_entry) and [`get_entry_history`](https://verifiedhandles.org/developers/mcp#mcp-get_entry_history): the same as the tools of the same names with no key.
+- `get_current_entry`: the entry the page shows, on an entry page.
+- `open_entry_page`: opens an entry’s page, on this site only.
+
+**On an entry page, while you are signed in**, two more. Neither saves anything:
+
+- `start_entry_edit`: puts the agent’s change into the editor as your draft of the entry. It is sent only when you press Save or Propose edit yourself, and it never replaces a draft you already have.
+- `propose_entry_change`: shows you the change and asks. Only your own click on **Send proposal** sends it, as a proposal to a reviewer, as a suggestion on the site does; Cancel sends nothing. The reviewer sees that an AI agent helped you prepare it.
+
+The console offers an agent no tools, by design.
+
+**Turning it on.** WebMCP is new, and not every browser has it yet. This site takes part in the origin trials Chrome and Edge run for it, so in a version their trials cover, the tools are there with nothing to set up. Otherwise, in Chrome 149 or later, open `chrome://flags/#enable-webmcp-testing`, set it to Enabled and restart Chrome (or start Chrome with `--enable-features=WebMCP`). Your browser also needs an agent that calls the tools, such as Chrome’s Model Context Tool Inspector extension.
 
 ## Rate limits
 
