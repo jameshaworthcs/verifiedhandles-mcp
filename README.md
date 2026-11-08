@@ -4,7 +4,7 @@
 
 This repository holds what you need to connect to it: the server itself runs at `https://verifiedhandles.org/mcp`, and its code is not here. The full guide, with every tool, is at https://verifiedhandles.org/developers/mcp.
 
-- **Version** 1.59.1: what changed is in [CHANGELOG.md](CHANGELOG.md).
+- **Version** 1.92.0: what changed is in [CHANGELOG.md](CHANGELOG.md).
 - **The tools**, as the server lists them: [with no key](tools/no-key.json) and [with a registered account’s key](tools/registered-key.json), each with its input and output schemas.
 - **A Claude Desktop extension** to install in one click: [mcpb/](mcpb/).
 - **The MCP Registry listing**: [server.json](server.json).
@@ -45,7 +45,7 @@ Any account can make a key: registered accounts and trusted editors may by defau
 
 Clients that sign in with OAuth (Claude, Claude Code, ChatGPT, VS Code, Cursor) can act as you without an API key. Connect them to `https://verifiedhandles.org/mcp/account`: they open a Verified Handles page where you sign in and choose what they may do: a role ceiling, read only, and for how long (7, 30 or 90 days).
 
-`https://verifiedhandles.org/mcp` stays as it is: with no key, the public reads; with an API key, your account. Your connected apps are on Console → Account → API keys, where you can disconnect one; you can have up to 10 at once. For clients that can’t sign in this way, such as scripts, use an API key as before.
+`https://verifiedhandles.org/mcp` stays as it is: with no key, the public reads; with an API key, your account. Your connected apps are on My account → Settings → API keys, where you can disconnect one; you can have up to 10 at once. For clients that can’t sign in this way, such as scripts, use an API key as before.
 
 ### Claude Code
 
@@ -80,7 +80,7 @@ VS Code asks you to sign in the first time it connects.
 
 ### ChatGPT
 
-In developer mode, create a connector with the address `https://verifiedhandles.org/mcp/account` and OAuth as its authentication. Or start with `https://verifiedhandles.org/mcp` and no key: it reads, and ChatGPT can link your Verified Handles account later, when it asks you to.
+In ChatGPT’s settings, with developer mode on, create a connector: give it a name, enter `https://verifiedhandles.org/mcp/account` as its MCP server URL and choose **OAuth** as its authentication. Creating it sends you to the Verified Handles page to sign in and choose what ChatGPT may do, then back to ChatGPT.
 
 ### Cursor, and other apps that register themselves
 

@@ -85,7 +85,9 @@
                           "nonprofit",
                           "company",
                           "organization",
+                          "show",
                           "website",
+                          "software",
                           "brand"
                         ]
                       },
@@ -93,11 +95,30 @@
                         "type": "null"
                       }
                     ],
-                    "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `website` (brand: website or app), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                    "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
                   },
                   "verified": {
                     "type": "boolean",
                     "description": "Verified Handles has verified the entry."
+                  },
+                  "claimed": {
+                    "type": "boolean",
+                    "description": "The person or organisation the entry is about has claimed it. Never who."
+                  },
+                  "rev": {
+                    "type": "string",
+                    "pattern": "^\\d+$",
+                    "description": "The version of the entry this body was made from: a later change’s is a larger number. A stamp (`GET /api/v1/stamps`) that differs means the entry has changed. To read an entry past every cache (after your own change, say), ask `?v=<rev>` with the rev your change returned."
+                  },
+                  "propose_policy": {
+                    "type": "string",
+                    "enum": [
+                      "registered",
+                      "trusted",
+                      "admin",
+                      "closed"
+                    ],
+                    "description": "Who may propose a change to the entry, as its page says: `registered`, any signed-in account; `trusted` or `admin`, only accounts with that role, and the page says why; `closed`, nobody, and the entry cannot be claimed. Whether this account may edit it live is the edit context’s (`GET /api/v1/entities/{vhid}/edit-context`). A body cached before this field was added may lack it until the entry next changes."
                   },
                   "description": {
                     "description": "The description as sanitised HTML, links to other entries named as they are today.",
@@ -174,6 +195,29 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "thumb": {
+                    "description": "The lead image at the width a list row draws it (100 CSS pixels), as a path on the site: the width the image is really served at (200 for a Commons picture), never one that redirects. Null when there is no image.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "thumb_plate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "light",
+                          "dark",
+                          "none"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The plate `thumb` is drawn on (the lead image’s `plate`), and always null when `thumb` is. `light` or `dark`: a picture with transparent pixels (a logo, most often), drawn on a plate of that colour so its ink shows in light and dark mode alike. `none`: an opaque picture (a photo), drawn as it is, with no plate. Null while the site has not yet looked at its pixels: decide from the picture itself, as the site’s pages then do."
                   },
                   "image_rights": {
                     "anyOf": [
@@ -370,13 +414,74 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "zoom_url": {
+                          "description": "The full-screen viewer’s picture, 1600 pixels wide at most, as a path on this site (`/img/w/1600q75/<id>`): what to load when the viewer opens. Null when the image has a `link`, which opens instead.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "zoom_max_url": {
+                          "description": "The widest picture this site serves of the image, no wider than the original, as a path on this site: what to load once the viewer is zoomed past twice the screen. Null when there is none wider than `zoom_url` (always for a Wikimedia Commons image), or when `zoom_url` is null.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "width": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The original’s width in pixels, or null when it is not known."
+                        },
+                        "height": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The original’s height in pixels, or null when it is not known."
+                        },
+                        "plate": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "light",
+                                "dark",
+                                "none"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The plate the image is drawn on, as the entry page draws it. `light` or `dark`: a picture with transparent pixels (a logo, most often), drawn on a plate of that colour so its ink shows in light and dark mode alike. `none`: an opaque picture (a photo), drawn as it is, with no plate. Null while the site has not yet looked at its pixels: decide from the picture itself, as the site’s pages then do."
                         }
                       },
                       "required": [
                         "url",
                         "main",
                         "image_rights",
-                        "link"
+                        "link",
+                        "zoom_url",
+                        "zoom_max_url",
+                        "width",
+                        "height",
+                        "plate"
                       ],
                       "additionalProperties": {},
                       "description": "One image an entry shows."
@@ -459,6 +564,10 @@
                             "at"
                           ],
                           "additionalProperties": {}
+                        },
+                        "shown_first": {
+                          "type": "boolean",
+                          "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
                         }
                       },
                       "required": [
@@ -468,11 +577,17 @@
                         "value",
                         "display",
                         "url",
-                        "verified"
+                        "verified",
+                        "shown_first"
                       ],
                       "additionalProperties": {},
                       "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
                     }
+                  },
+                  "merged_into": {
+                    "description": "Present when the key asked for named an entry that was merged into this one: this entry’s VHID.",
+                    "type": "string",
+                    "pattern": "^\\d{11}$"
                   }
                 },
                 "required": [
@@ -483,11 +598,16 @@
                   "entity_type",
                   "entity_kind",
                   "verified",
+                  "claimed",
+                  "rev",
+                  "propose_policy",
                   "description",
                   "description_source",
                   "description_license",
                   "url",
                   "image",
+                  "thumb",
+                  "thumb_plate",
                   "image_rights",
                   "images",
                   "handles"
@@ -635,6 +755,64 @@
                 "verified": {
                   "type": "boolean"
                 },
+                "claimed": {
+                  "type": "boolean",
+                  "description": "The person or organisation the entry is about has claimed it. Never who."
+                },
+                "entity_kind": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "person",
+                        "musical_group",
+                        "sports_organization",
+                        "broadcaster",
+                        "publisher",
+                        "educational_institution",
+                        "research_organization",
+                        "religious_organization",
+                        "museum",
+                        "financial_institution",
+                        "chain",
+                        "nonprofit",
+                        "company",
+                        "organization",
+                        "show",
+                        "website",
+                        "software",
+                        "brand"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                },
+                "thumb": {
+                  "description": "The lead image at the width a list row draws it (100 CSS pixels), as a path on the site: the width the image is really served at (200 for a Commons picture), never one that redirects. Null when there is no image.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "thumb_plate": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "light",
+                        "dark",
+                        "none"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The plate `thumb` is drawn on (the lead image’s `plate`), and always null when `thumb` is. `light` or `dark`: a picture with transparent pixels (a logo, most often), drawn on a plate of that colour so its ink shows in light and dark mode alike. `none`: an opaque picture (a photo), drawn as it is, with no plate. Null while the site has not yet looked at its pixels: decide from the picture itself, as the site’s pages then do."
+                },
                 "snippet": {
                   "description": "Plain text from the description around the words that matched, or null when the match was not in it.",
                   "type": [
@@ -657,6 +835,10 @@
                 "title",
                 "subtitle",
                 "verified",
+                "claimed",
+                "entity_kind",
+                "thumb",
+                "thumb_plate",
                 "snippet",
                 "highlighted",
                 "url"
@@ -922,7 +1104,7 @@
                   ]
                 },
                 "is_bot": {
-                  "description": "Made by an automated process (the Wikidata sync, an import).",
+                  "description": "Made by an automated process: the Wikidata sync, an import, or an account an administrator has marked as automation (a script or agent). A legacy (archive) revision keeps the old wiki’s own flag.",
                   "type": [
                     "boolean",
                     "null"
@@ -957,6 +1139,20 @@
                     "string",
                     "null"
                   ]
+                },
+                "actor_id": {
+                  "description": "An opaque id for this person, the same wherever they are named, for blocking; null whenever their name isn’t shown to you. Not an account id and can’t be turned into one; may change if the site’s keys are rotated.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "proposer_id": {
+                  "description": "An opaque id for this person, the same wherever they are named, for blocking; null whenever their name isn’t shown to you. Not an account id and can’t be turned into one; may change if the site’s keys are rotated.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
@@ -969,7 +1165,9 @@
                 "source",
                 "hidden",
                 "deleted",
-                "proposer"
+                "proposer",
+                "actor_id",
+                "proposer_id"
               ],
               "additionalProperties": {},
               "description": "One revision in an entry’s public history."
@@ -1112,7 +1310,9 @@
                                 "nonprofit",
                                 "company",
                                 "organization",
+                                "show",
                                 "website",
+                                "software",
                                 "brand"
                               ]
                             },
@@ -1120,11 +1320,30 @@
                               "type": "null"
                             }
                           ],
-                          "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `website` (brand: website or app), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                          "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
                         },
                         "verified": {
                           "type": "boolean",
                           "description": "Verified Handles has verified the entry."
+                        },
+                        "claimed": {
+                          "type": "boolean",
+                          "description": "The person or organisation the entry is about has claimed it. Never who."
+                        },
+                        "rev": {
+                          "type": "string",
+                          "pattern": "^\\d+$",
+                          "description": "The version of the entry this body was made from: a later change’s is a larger number. A stamp (`GET /api/v1/stamps`) that differs means the entry has changed. To read an entry past every cache (after your own change, say), ask `?v=<rev>` with the rev your change returned."
+                        },
+                        "propose_policy": {
+                          "type": "string",
+                          "enum": [
+                            "registered",
+                            "trusted",
+                            "admin",
+                            "closed"
+                          ],
+                          "description": "Who may propose a change to the entry, as its page says: `registered`, any signed-in account; `trusted` or `admin`, only accounts with that role, and the page says why; `closed`, nobody, and the entry cannot be claimed. Whether this account may edit it live is the edit context’s (`GET /api/v1/entities/{vhid}/edit-context`). A body cached before this field was added may lack it until the entry next changes."
                         },
                         "description": {
                           "description": "The description as sanitised HTML, links to other entries named as they are today.",
@@ -1201,6 +1420,29 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "thumb": {
+                          "description": "The lead image at the width a list row draws it (100 CSS pixels), as a path on the site: the width the image is really served at (200 for a Commons picture), never one that redirects. Null when there is no image.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "thumb_plate": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "light",
+                                "dark",
+                                "none"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The plate `thumb` is drawn on (the lead image’s `plate`), and always null when `thumb` is. `light` or `dark`: a picture with transparent pixels (a logo, most often), drawn on a plate of that colour so its ink shows in light and dark mode alike. `none`: an opaque picture (a photo), drawn as it is, with no plate. Null while the site has not yet looked at its pixels: decide from the picture itself, as the site’s pages then do."
                         },
                         "image_rights": {
                           "anyOf": [
@@ -1397,13 +1639,74 @@
                                   "string",
                                   "null"
                                 ]
+                              },
+                              "zoom_url": {
+                                "description": "The full-screen viewer’s picture, 1600 pixels wide at most, as a path on this site (`/img/w/1600q75/<id>`): what to load when the viewer opens. Null when the image has a `link`, which opens instead.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "zoom_max_url": {
+                                "description": "The widest picture this site serves of the image, no wider than the original, as a path on this site: what to load once the viewer is zoomed past twice the screen. Null when there is none wider than `zoom_url` (always for a Wikimedia Commons image), or when `zoom_url` is null.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "width": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "description": "The original’s width in pixels, or null when it is not known."
+                              },
+                              "height": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "description": "The original’s height in pixels, or null when it is not known."
+                              },
+                              "plate": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "light",
+                                      "dark",
+                                      "none"
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "description": "The plate the image is drawn on, as the entry page draws it. `light` or `dark`: a picture with transparent pixels (a logo, most often), drawn on a plate of that colour so its ink shows in light and dark mode alike. `none`: an opaque picture (a photo), drawn as it is, with no plate. Null while the site has not yet looked at its pixels: decide from the picture itself, as the site’s pages then do."
                               }
                             },
                             "required": [
                               "url",
                               "main",
                               "image_rights",
-                              "link"
+                              "link",
+                              "zoom_url",
+                              "zoom_max_url",
+                              "width",
+                              "height",
+                              "plate"
                             ],
                             "additionalProperties": {},
                             "description": "One image an entry shows."
@@ -1486,6 +1789,10 @@
                                   "at"
                                 ],
                                 "additionalProperties": {}
+                              },
+                              "shown_first": {
+                                "type": "boolean",
+                                "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
                               }
                             },
                             "required": [
@@ -1495,11 +1802,17 @@
                               "value",
                               "display",
                               "url",
-                              "verified"
+                              "verified",
+                              "shown_first"
                             ],
                             "additionalProperties": {},
                             "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
                           }
+                        },
+                        "merged_into": {
+                          "description": "Present when the key asked for named an entry that was merged into this one: this entry’s VHID.",
+                          "type": "string",
+                          "pattern": "^\\d{11}$"
                         }
                       },
                       "required": [
@@ -1510,11 +1823,16 @@
                         "entity_type",
                         "entity_kind",
                         "verified",
+                        "claimed",
+                        "rev",
+                        "propose_policy",
                         "description",
                         "description_source",
                         "description_license",
                         "url",
                         "image",
+                        "thumb",
+                        "thumb_plate",
                         "image_rights",
                         "images",
                         "handles"
