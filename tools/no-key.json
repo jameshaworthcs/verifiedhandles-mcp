@@ -3,7 +3,7 @@
     {
       "name": "get_entry",
       "title": "Get an entry",
-      "description": "One entry, by VHID, short name or Wikidata QID: its public record (title, description, handles, image, URL) and, as `editing`, what the editor would load for this key — the current revision, the editable fields, every handle with who manages it (the Wikidata sync or the site), which fields the sync manages, and whether this key may edit it live. Without an API key, the public record alone.",
+      "description": "One entry, by VHID, short name or Wikidata QID: its public record (title, description, handles, image, URL) and, as `editing`, its current revision, who manages each field and handle (the Wikidata sync or the site), and whether this key may edit it live.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -12,11 +12,11 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "include_platforms": {
             "default": false,
-            "description": "Also list every platform a handle can be on (id, name, URL prefix). Needs an API key.",
+            "description": "Also list the platforms a handle can be on.",
             "type": "boolean"
           }
         },
@@ -59,12 +59,42 @@
                       "null"
                     ]
                   },
-                  "entity_type": {
-                    "description": "What it is, from its Wikidata item: `person`, `organization` or `brand`; null when unknown. `entity_kind` says more.",
+                  "native_name": {
+                    "description": "The name in its own script, shown under the title (`川瀬智子`): from the Wikidata item’s name in native language when it is not the title, or as an editor gave it; null for none.",
                     "type": [
                       "string",
                       "null"
                     ]
+                  },
+                  "native_name_lang": {
+                    "description": "The language code of `native_name` (`ja`, `zh-hant`), as Wikidata gives it; null when none is known.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "also_known_as": {
+                    "description": "Another name the subject is known by, as an editor gave it (`Amaranta Hank`): the entry’s search snippet says it after the name, before any alias the Wikidata item states. Never from Wikidata; null for none.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "entity_type": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "person",
+                          "organization",
+                          "brand"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "What it is, from its Wikidata item; null when unknown. `entity_kind` says more."
                   },
                   "entity_kind": {
                     "anyOf": [
@@ -80,6 +110,7 @@
                           "research_organization",
                           "religious_organization",
                           "museum",
+                          "performing_group",
                           "financial_institution",
                           "chain",
                           "nonprofit",
@@ -89,13 +120,34 @@
                           "website",
                           "software",
                           "brand"
-                        ]
+                        ],
+                        "x-enumDescriptions": {
+                          "person": "`person`: person",
+                          "musical_group": "`organization`: musical group",
+                          "sports_organization": "`organization`: sports organisation",
+                          "broadcaster": "`organization`: broadcaster",
+                          "publisher": "`organization`: publisher",
+                          "educational_institution": "`organization`: educational institution",
+                          "research_organization": "`organization`: research organisation",
+                          "religious_organization": "`organization`: religious organisation",
+                          "museum": "`organization`: museum",
+                          "performing_group": "`organization`: performing group",
+                          "financial_institution": "`organization`: financial institution",
+                          "chain": "`organization`: retail or hospitality chain",
+                          "nonprofit": "`organization`: charity or non-profit",
+                          "company": "`organization`: company",
+                          "organization": "`organization`: organisation",
+                          "show": "`brand`: show",
+                          "website": "`brand`: website or app",
+                          "software": "`brand`: software",
+                          "brand": "`brand`: brand"
+                        }
                       },
                       {
                         "type": "null"
                       }
                     ],
-                    "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                    "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, named beside it below, and each type is also the kind of an entry of that type with no finer one. New kinds may be added: treat an unknown value as its `entity_type`."
                   },
                   "verified": {
                     "type": "boolean",
@@ -525,6 +577,13 @@
                             "null"
                           ]
                         },
+                        "display_label": {
+                          "description": "What the platform calls a handle whose value is an ID, like `Artist page`: the entry page shows it as the card’s main line and the value under it, unless `display` is set. Null for most platforms.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "url": {
                           "description": "The profile’s address, built from the platform’s URL pattern. Null for email.",
                           "type": [
@@ -567,7 +626,11 @@
                         },
                         "shown_first": {
                           "type": "boolean",
-                          "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
+                          "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the ones a platform’s own “+ N more” holds (a platform with four accounts or more shows its first), for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
+                        },
+                        "platform_first": {
+                          "type": "boolean",
+                          "description": "The first of the entry’s accounts on its platform, in this order: the one an editor put first, else the one Wikidata marks preferred, else the one whose name is the entry’s, before its regional accounts. Take it as the entry’s main account there."
                         }
                       },
                       "required": [
@@ -576,9 +639,11 @@
                         "category",
                         "value",
                         "display",
+                        "display_label",
                         "url",
                         "verified",
-                        "shown_first"
+                        "shown_first",
+                        "platform_first"
                       ],
                       "additionalProperties": {},
                       "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
@@ -595,6 +660,9 @@
                   "short",
                   "title",
                   "subtitle",
+                  "native_name",
+                  "native_name_lang",
+                  "also_known_as",
                   "entity_type",
                   "entity_kind",
                   "verified",
@@ -661,7 +729,7 @@
     {
       "name": "search_entries",
       "title": "Search entries",
-      "description": "Search the entries as the site search does: words match titles, subtitles and descriptions; a Wikidata QID finds the entries linked to it; a VHID finds that entry and the entries that link to it.",
+      "description": "Find entries by name (words match titles, subtitles, descriptions), by Wikidata QID (the entries linked to it) or by VHID (it and the entries linking to it).",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -773,6 +841,7 @@
                         "research_organization",
                         "religious_organization",
                         "museum",
+                        "performing_group",
                         "financial_institution",
                         "chain",
                         "nonprofit",
@@ -782,13 +851,34 @@
                         "website",
                         "software",
                         "brand"
-                      ]
+                      ],
+                      "x-enumDescriptions": {
+                        "person": "`person`: person",
+                        "musical_group": "`organization`: musical group",
+                        "sports_organization": "`organization`: sports organisation",
+                        "broadcaster": "`organization`: broadcaster",
+                        "publisher": "`organization`: publisher",
+                        "educational_institution": "`organization`: educational institution",
+                        "research_organization": "`organization`: research organisation",
+                        "religious_organization": "`organization`: religious organisation",
+                        "museum": "`organization`: museum",
+                        "performing_group": "`organization`: performing group",
+                        "financial_institution": "`organization`: financial institution",
+                        "chain": "`organization`: retail or hospitality chain",
+                        "nonprofit": "`organization`: charity or non-profit",
+                        "company": "`organization`: company",
+                        "organization": "`organization`: organisation",
+                        "show": "`brand`: show",
+                        "website": "`brand`: website or app",
+                        "software": "`brand`: software",
+                        "brand": "`brand`: brand"
+                      }
                     },
                     {
                       "type": "null"
                     }
                   ],
-                  "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                  "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, named beside it below, and each type is also the kind of an entry of that type with no finer one. New kinds may be added: treat an unknown value as its `entity_type`."
                 },
                 "thumb": {
                   "description": "The lead image at the width a list row draws it (100 CSS pixels), as a path on the site: the width the image is really served at (200 for a Commons picture), never one that redirects. Null when there is no image.",
@@ -882,24 +972,24 @@
     {
       "name": "find_by_handle",
       "title": "Find entries by handle",
-      "description": "Which public entries list a handle: “is x.com/someone an official account, and whose?”. Give a profile’s address as url (https://x.com/someone), or platform (its catalog id: twitter, instagram, youtube, …) and value (someone or @someone). Answers each entry’s VHID, title and URL, the handle as the entry lists it, and whether that handle is verified; an empty list when no entry lists it. Case is ignored where the platform ignores it. Email addresses are not looked up.",
+      "description": "Which public entries list a handle or website: “is this an official account, and whose?”. Give url (a profile’s or a website’s address; a website is matched by its site), or platform and value instead. Empty when none. Not for emails.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "url": {
-            "description": "A profile’s address, such as https://x.com/someone. Instead of platform and value.",
+            "description": "A profile’s or website’s address: https://x.com/someone, example.org.",
             "type": "string",
             "minLength": 1,
             "maxLength": 1000
           },
           "platform": {
-            "description": "The platform’s catalog id, such as twitter. With value.",
+            "description": "The platform’s catalog id, with value: \"twitter\" for X; YouTube is \"youtube_channel\" (a UC… id) or \"youtube_handle\" (@name, without the @).",
             "type": "string",
             "minLength": 1,
             "maxLength": 100
           },
           "value": {
-            "description": "The handle on that platform, such as someone or @someone.",
+            "description": "The handle, e.g. someone.",
             "type": "string",
             "minLength": 1,
             "maxLength": 1000
@@ -991,7 +1081,7 @@
     {
       "name": "get_entry_history",
       "title": "Entry history",
-      "description": "An entry’s public edit history, newest first (`next_offset` pages on). A merged entry’s key gives its own history.",
+      "description": "An entry’s public edit history, newest first.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1000,7 +1090,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "limit": {
             "default": 50,
@@ -1211,7 +1301,7 @@
     {
       "name": "get_entries",
       "title": "Get many entries",
-      "description": "Up to 50 entries’ public records in one call, by VHID or short name (not a Wikidata QID: get_entry or search_entries finds an entry by its item), each answered as get_entry answers it signed out — the entry, or not_found — in the order given. A name given twice is answered once.",
+      "description": "Up to 50 entries’ public records in one call, by VHID or short name, not a QID (for a QID, get_entry or search_entries). Whole records, very large for a big entry: to find VHIDs by name, use search_entries.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1234,7 +1324,7 @@
                 }
               ]
             },
-            "description": "The entries: each a VHID (11 digits) or a short name."
+            "description": "Each a VHID or a short name."
           }
         },
         "required": [
@@ -1284,12 +1374,42 @@
                             "null"
                           ]
                         },
-                        "entity_type": {
-                          "description": "What it is, from its Wikidata item: `person`, `organization` or `brand`; null when unknown. `entity_kind` says more.",
+                        "native_name": {
+                          "description": "The name in its own script, shown under the title (`川瀬智子`): from the Wikidata item’s name in native language when it is not the title, or as an editor gave it; null for none.",
                           "type": [
                             "string",
                             "null"
                           ]
+                        },
+                        "native_name_lang": {
+                          "description": "The language code of `native_name` (`ja`, `zh-hant`), as Wikidata gives it; null when none is known.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "also_known_as": {
+                          "description": "Another name the subject is known by, as an editor gave it (`Amaranta Hank`): the entry’s search snippet says it after the name, before any alias the Wikidata item states. Never from Wikidata; null for none.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "entity_type": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "person",
+                                "organization",
+                                "brand"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "What it is, from its Wikidata item; null when unknown. `entity_kind` says more."
                         },
                         "entity_kind": {
                           "anyOf": [
@@ -1305,6 +1425,7 @@
                                 "research_organization",
                                 "religious_organization",
                                 "museum",
+                                "performing_group",
                                 "financial_institution",
                                 "chain",
                                 "nonprofit",
@@ -1314,13 +1435,34 @@
                                 "website",
                                 "software",
                                 "brand"
-                              ]
+                              ],
+                              "x-enumDescriptions": {
+                                "person": "`person`: person",
+                                "musical_group": "`organization`: musical group",
+                                "sports_organization": "`organization`: sports organisation",
+                                "broadcaster": "`organization`: broadcaster",
+                                "publisher": "`organization`: publisher",
+                                "educational_institution": "`organization`: educational institution",
+                                "research_organization": "`organization`: research organisation",
+                                "religious_organization": "`organization`: religious organisation",
+                                "museum": "`organization`: museum",
+                                "performing_group": "`organization`: performing group",
+                                "financial_institution": "`organization`: financial institution",
+                                "chain": "`organization`: retail or hospitality chain",
+                                "nonprofit": "`organization`: charity or non-profit",
+                                "company": "`organization`: company",
+                                "organization": "`organization`: organisation",
+                                "show": "`brand`: show",
+                                "website": "`brand`: website or app",
+                                "software": "`brand`: software",
+                                "brand": "`brand`: brand"
+                              }
                             },
                             {
                               "type": "null"
                             }
                           ],
-                          "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                          "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, named beside it below, and each type is also the kind of an entry of that type with no finer one. New kinds may be added: treat an unknown value as its `entity_type`."
                         },
                         "verified": {
                           "type": "boolean",
@@ -1750,6 +1892,13 @@
                                   "null"
                                 ]
                               },
+                              "display_label": {
+                                "description": "What the platform calls a handle whose value is an ID, like `Artist page`: the entry page shows it as the card’s main line and the value under it, unless `display` is set. Null for most platforms.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
                               "url": {
                                 "description": "The profile’s address, built from the platform’s URL pattern. Null for email.",
                                 "type": [
@@ -1792,7 +1941,11 @@
                               },
                               "shown_first": {
                                 "type": "boolean",
-                                "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
+                                "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the ones a platform’s own “+ N more” holds (a platform with four accounts or more shows its first), for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
+                              },
+                              "platform_first": {
+                                "type": "boolean",
+                                "description": "The first of the entry’s accounts on its platform, in this order: the one an editor put first, else the one Wikidata marks preferred, else the one whose name is the entry’s, before its regional accounts. Take it as the entry’s main account there."
                               }
                             },
                             "required": [
@@ -1801,9 +1954,11 @@
                               "category",
                               "value",
                               "display",
+                              "display_label",
                               "url",
                               "verified",
-                              "shown_first"
+                              "shown_first",
+                              "platform_first"
                             ],
                             "additionalProperties": {},
                             "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
@@ -1820,6 +1975,9 @@
                         "short",
                         "title",
                         "subtitle",
+                        "native_name",
+                        "native_name_lang",
+                        "also_known_as",
                         "entity_type",
                         "entity_kind",
                         "verified",

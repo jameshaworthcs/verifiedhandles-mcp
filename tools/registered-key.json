@@ -3,7 +3,7 @@
     {
       "name": "get_entry",
       "title": "Get an entry",
-      "description": "One entry, by VHID, short name or Wikidata QID: its public record (title, description, handles, image, URL) and, as `editing`, what the editor would load for this key — the current revision, the editable fields, every handle with who manages it (the Wikidata sync or the site), which fields the sync manages, and whether this key may edit it live. Without an API key, the public record alone.",
+      "description": "One entry, by VHID, short name or Wikidata QID: its public record (title, description, handles, image, URL) and, as `editing`, its current revision, who manages each field and handle (the Wikidata sync or the site), and whether this key may edit it live.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -12,11 +12,11 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "include_platforms": {
             "default": false,
-            "description": "Also list every platform a handle can be on (id, name, URL prefix). Needs an API key.",
+            "description": "Also list the platforms a handle can be on.",
             "type": "boolean"
           }
         },
@@ -59,12 +59,42 @@
                       "null"
                     ]
                   },
-                  "entity_type": {
-                    "description": "What it is, from its Wikidata item: `person`, `organization` or `brand`; null when unknown. `entity_kind` says more.",
+                  "native_name": {
+                    "description": "The name in its own script, shown under the title (`川瀬智子`): from the Wikidata item’s name in native language when it is not the title, or as an editor gave it; null for none.",
                     "type": [
                       "string",
                       "null"
                     ]
+                  },
+                  "native_name_lang": {
+                    "description": "The language code of `native_name` (`ja`, `zh-hant`), as Wikidata gives it; null when none is known.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "also_known_as": {
+                    "description": "Another name the subject is known by, as an editor gave it (`Amaranta Hank`): the entry’s search snippet says it after the name, before any alias the Wikidata item states. Never from Wikidata; null for none.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "entity_type": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "person",
+                          "organization",
+                          "brand"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "What it is, from its Wikidata item; null when unknown. `entity_kind` says more."
                   },
                   "entity_kind": {
                     "anyOf": [
@@ -80,6 +110,7 @@
                           "research_organization",
                           "religious_organization",
                           "museum",
+                          "performing_group",
                           "financial_institution",
                           "chain",
                           "nonprofit",
@@ -89,13 +120,34 @@
                           "website",
                           "software",
                           "brand"
-                        ]
+                        ],
+                        "x-enumDescriptions": {
+                          "person": "`person`: person",
+                          "musical_group": "`organization`: musical group",
+                          "sports_organization": "`organization`: sports organisation",
+                          "broadcaster": "`organization`: broadcaster",
+                          "publisher": "`organization`: publisher",
+                          "educational_institution": "`organization`: educational institution",
+                          "research_organization": "`organization`: research organisation",
+                          "religious_organization": "`organization`: religious organisation",
+                          "museum": "`organization`: museum",
+                          "performing_group": "`organization`: performing group",
+                          "financial_institution": "`organization`: financial institution",
+                          "chain": "`organization`: retail or hospitality chain",
+                          "nonprofit": "`organization`: charity or non-profit",
+                          "company": "`organization`: company",
+                          "organization": "`organization`: organisation",
+                          "show": "`brand`: show",
+                          "website": "`brand`: website or app",
+                          "software": "`brand`: software",
+                          "brand": "`brand`: brand"
+                        }
                       },
                       {
                         "type": "null"
                       }
                     ],
-                    "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                    "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, named beside it below, and each type is also the kind of an entry of that type with no finer one. New kinds may be added: treat an unknown value as its `entity_type`."
                   },
                   "verified": {
                     "type": "boolean",
@@ -525,6 +577,13 @@
                             "null"
                           ]
                         },
+                        "display_label": {
+                          "description": "What the platform calls a handle whose value is an ID, like `Artist page`: the entry page shows it as the card’s main line and the value under it, unless `display` is set. Null for most platforms.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "url": {
                           "description": "The profile’s address, built from the platform’s URL pattern. Null for email.",
                           "type": [
@@ -567,7 +626,11 @@
                         },
                         "shown_first": {
                           "type": "boolean",
-                          "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
+                          "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the ones a platform’s own “+ N more” holds (a platform with four accounts or more shows its first), for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
+                        },
+                        "platform_first": {
+                          "type": "boolean",
+                          "description": "The first of the entry’s accounts on its platform, in this order: the one an editor put first, else the one Wikidata marks preferred, else the one whose name is the entry’s, before its regional accounts. Take it as the entry’s main account there."
                         }
                       },
                       "required": [
@@ -576,9 +639,11 @@
                         "category",
                         "value",
                         "display",
+                        "display_label",
                         "url",
                         "verified",
-                        "shown_first"
+                        "shown_first",
+                        "platform_first"
                       ],
                       "additionalProperties": {},
                       "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
@@ -595,6 +660,9 @@
                   "short",
                   "title",
                   "subtitle",
+                  "native_name",
+                  "native_name_lang",
+                  "also_known_as",
                   "entity_type",
                   "entity_kind",
                   "verified",
@@ -661,7 +729,7 @@
     {
       "name": "search_entries",
       "title": "Search entries",
-      "description": "Search the entries as the site search does: words match titles, subtitles and descriptions; a Wikidata QID finds the entries linked to it; a VHID finds that entry and the entries that link to it.",
+      "description": "Find entries by name (words match titles, subtitles, descriptions), by Wikidata QID (the entries linked to it) or by VHID (it and the entries linking to it).",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -773,6 +841,7 @@
                         "research_organization",
                         "religious_organization",
                         "museum",
+                        "performing_group",
                         "financial_institution",
                         "chain",
                         "nonprofit",
@@ -782,13 +851,34 @@
                         "website",
                         "software",
                         "brand"
-                      ]
+                      ],
+                      "x-enumDescriptions": {
+                        "person": "`person`: person",
+                        "musical_group": "`organization`: musical group",
+                        "sports_organization": "`organization`: sports organisation",
+                        "broadcaster": "`organization`: broadcaster",
+                        "publisher": "`organization`: publisher",
+                        "educational_institution": "`organization`: educational institution",
+                        "research_organization": "`organization`: research organisation",
+                        "religious_organization": "`organization`: religious organisation",
+                        "museum": "`organization`: museum",
+                        "performing_group": "`organization`: performing group",
+                        "financial_institution": "`organization`: financial institution",
+                        "chain": "`organization`: retail or hospitality chain",
+                        "nonprofit": "`organization`: charity or non-profit",
+                        "company": "`organization`: company",
+                        "organization": "`organization`: organisation",
+                        "show": "`brand`: show",
+                        "website": "`brand`: website or app",
+                        "software": "`brand`: software",
+                        "brand": "`brand`: brand"
+                      }
                     },
                     {
                       "type": "null"
                     }
                   ],
-                  "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                  "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, named beside it below, and each type is also the kind of an entry of that type with no finer one. New kinds may be added: treat an unknown value as its `entity_type`."
                 },
                 "thumb": {
                   "description": "The lead image at the width a list row draws it (100 CSS pixels), as a path on the site: the width the image is really served at (200 for a Commons picture), never one that redirects. Null when there is no image.",
@@ -882,24 +972,24 @@
     {
       "name": "find_by_handle",
       "title": "Find entries by handle",
-      "description": "Which public entries list a handle: “is x.com/someone an official account, and whose?”. Give a profile’s address as url (https://x.com/someone), or platform (its catalog id: twitter, instagram, youtube, …) and value (someone or @someone). Answers each entry’s VHID, title and URL, the handle as the entry lists it, and whether that handle is verified; an empty list when no entry lists it. Case is ignored where the platform ignores it. Email addresses are not looked up.",
+      "description": "Which public entries list a handle or website: “is this an official account, and whose?”. Give url (a profile’s or a website’s address; a website is matched by its site), or platform and value instead. Empty when none. Not for emails.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "url": {
-            "description": "A profile’s address, such as https://x.com/someone. Instead of platform and value.",
+            "description": "A profile’s or website’s address: https://x.com/someone, example.org.",
             "type": "string",
             "minLength": 1,
             "maxLength": 1000
           },
           "platform": {
-            "description": "The platform’s catalog id, such as twitter. With value.",
+            "description": "The platform’s catalog id, with value: \"twitter\" for X; YouTube is \"youtube_channel\" (a UC… id) or \"youtube_handle\" (@name, without the @).",
             "type": "string",
             "minLength": 1,
             "maxLength": 100
           },
           "value": {
-            "description": "The handle on that platform, such as someone or @someone.",
+            "description": "The handle, e.g. someone.",
             "type": "string",
             "minLength": 1,
             "maxLength": 1000
@@ -991,7 +1081,7 @@
     {
       "name": "get_entry_history",
       "title": "Entry history",
-      "description": "An entry’s public edit history, newest first (`next_offset` pages on). A merged entry’s key gives its own history.",
+      "description": "An entry’s public edit history, newest first.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1000,7 +1090,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "limit": {
             "default": 50,
@@ -1211,7 +1301,7 @@
     {
       "name": "get_entries",
       "title": "Get many entries",
-      "description": "Up to 50 entries’ public records in one call, by VHID or short name (not a Wikidata QID: get_entry or search_entries finds an entry by its item), each answered as get_entry answers it signed out — the entry, or not_found — in the order given. A name given twice is answered once.",
+      "description": "Up to 50 entries’ public records in one call, by VHID or short name, not a QID (for a QID, get_entry or search_entries). Whole records, very large for a big entry: to find VHIDs by name, use search_entries.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1234,7 +1324,7 @@
                 }
               ]
             },
-            "description": "The entries: each a VHID (11 digits) or a short name."
+            "description": "Each a VHID or a short name."
           }
         },
         "required": [
@@ -1284,12 +1374,42 @@
                             "null"
                           ]
                         },
-                        "entity_type": {
-                          "description": "What it is, from its Wikidata item: `person`, `organization` or `brand`; null when unknown. `entity_kind` says more.",
+                        "native_name": {
+                          "description": "The name in its own script, shown under the title (`川瀬智子`): from the Wikidata item’s name in native language when it is not the title, or as an editor gave it; null for none.",
                           "type": [
                             "string",
                             "null"
                           ]
+                        },
+                        "native_name_lang": {
+                          "description": "The language code of `native_name` (`ja`, `zh-hant`), as Wikidata gives it; null when none is known.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "also_known_as": {
+                          "description": "Another name the subject is known by, as an editor gave it (`Amaranta Hank`): the entry’s search snippet says it after the name, before any alias the Wikidata item states. Never from Wikidata; null for none.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "entity_type": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "person",
+                                "organization",
+                                "brand"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "What it is, from its Wikidata item; null when unknown. `entity_kind` says more."
                         },
                         "entity_kind": {
                           "anyOf": [
@@ -1305,6 +1425,7 @@
                                 "research_organization",
                                 "religious_organization",
                                 "museum",
+                                "performing_group",
                                 "financial_institution",
                                 "chain",
                                 "nonprofit",
@@ -1314,13 +1435,34 @@
                                 "website",
                                 "software",
                                 "brand"
-                              ]
+                              ],
+                              "x-enumDescriptions": {
+                                "person": "`person`: person",
+                                "musical_group": "`organization`: musical group",
+                                "sports_organization": "`organization`: sports organisation",
+                                "broadcaster": "`organization`: broadcaster",
+                                "publisher": "`organization`: publisher",
+                                "educational_institution": "`organization`: educational institution",
+                                "research_organization": "`organization`: research organisation",
+                                "religious_organization": "`organization`: religious organisation",
+                                "museum": "`organization`: museum",
+                                "performing_group": "`organization`: performing group",
+                                "financial_institution": "`organization`: financial institution",
+                                "chain": "`organization`: retail or hospitality chain",
+                                "nonprofit": "`organization`: charity or non-profit",
+                                "company": "`organization`: company",
+                                "organization": "`organization`: organisation",
+                                "show": "`brand`: show",
+                                "website": "`brand`: website or app",
+                                "software": "`brand`: software",
+                                "brand": "`brand`: brand"
+                              }
                             },
                             {
                               "type": "null"
                             }
                           ],
-                          "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, and `person`, `organization` and `brand` are also the kinds of an entry of that type with no finer one. The kinds, with their type: `person` (person: person), `musical_group` (organization: musical group), `sports_organization` (organization: sports organisation), `broadcaster` (organization: broadcaster), `publisher` (organization: publisher), `educational_institution` (organization: educational institution), `research_organization` (organization: research organisation), `religious_organization` (organization: religious organisation), `museum` (organization: museum), `financial_institution` (organization: financial institution), `chain` (organization: retail or hospitality chain), `nonprofit` (organization: charity or non-profit), `company` (organization: company), `organization` (organization: organisation), `show` (brand: show), `website` (brand: website or app), `software` (brand: software), `brand` (brand: brand). New kinds may be added; treat an unknown value as its `entity_type`."
+                          "description": "The finer kind of thing it is, from its Wikidata item’s classes; null when unknown (an organisation or a brand not yet read since kinds were added reads null until the sync next reads its item). Each kind belongs to one `entity_type`, named beside it below, and each type is also the kind of an entry of that type with no finer one. New kinds may be added: treat an unknown value as its `entity_type`."
                         },
                         "verified": {
                           "type": "boolean",
@@ -1750,6 +1892,13 @@
                                   "null"
                                 ]
                               },
+                              "display_label": {
+                                "description": "What the platform calls a handle whose value is an ID, like `Artist page`: the entry page shows it as the card’s main line and the value under it, unless `display` is set. Null for most platforms.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
                               "url": {
                                 "description": "The profile’s address, built from the platform’s URL pattern. Null for email.",
                                 "type": [
@@ -1792,7 +1941,11 @@
                               },
                               "shown_first": {
                                 "type": "boolean",
-                                "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
+                                "description": "The entry page shows it before anyone opens anything: true for the accounts above a long list’s “Show N more accounts”, false for the ones folded under it, for the ones a platform’s own “+ N more” holds (a platform with four accounts or more shows its first), for the external identifiers (listed under their own closed heading, unless the entry has nothing else), and for an account the page does not draw."
+                              },
+                              "platform_first": {
+                                "type": "boolean",
+                                "description": "The first of the entry’s accounts on its platform, in this order: the one an editor put first, else the one Wikidata marks preferred, else the one whose name is the entry’s, before its regional accounts. Take it as the entry’s main account there."
                               }
                             },
                             "required": [
@@ -1801,9 +1954,11 @@
                               "category",
                               "value",
                               "display",
+                              "display_label",
                               "url",
                               "verified",
-                              "shown_first"
+                              "shown_first",
+                              "platform_first"
                             ],
                             "additionalProperties": {},
                             "description": "One account or identifier of an entry, in the order the entry page shows them. A Wikidata item linked to the entry comes last, as platform `wikidata`."
@@ -1820,6 +1975,9 @@
                         "short",
                         "title",
                         "subtitle",
+                        "native_name",
+                        "native_name_lang",
+                        "also_known_as",
                         "entity_type",
                         "entity_kind",
                         "verified",
@@ -1905,7 +2063,7 @@
     {
       "name": "search_commons_images",
       "title": "Search Wikimedia Commons",
-      "description": "Search Wikimedia Commons for an image to put on an entry, as the editor’s image picker does. An exact file name finds that file first, even one uploaded minutes ago. Each hit has a `token`: pass it to set_entry_image as `commons_token`.",
+      "description": "Search Wikimedia Commons for an image for an entry; an exact file name finds that file first. Pass a hit’s `token` to set_entry_image as `commons_token`.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2011,7 +2169,7 @@
     {
       "name": "update_entry_fields",
       "title": "Edit an entry’s text",
-      "description": "Change an entry’s title, subtitle, description, short name or (on an entry with no Wikidata item) a person’s sourced date of birth (`bio`), or remove its “from Wikipedia” credit or name the Wikipedia page it came from — a live edit, as the editor saves one: a new revision, audited. Give only what changes; null clears a field. The description is HTML (sanitised on save). A field you change here is no longer managed by the Wikidata sync; to hand one back, so the next sync refreshes it from the item, use set_wikidata_ownership (relinquish_fields). Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "description": "Change an entry’s text fields (title, subtitle, description, short name, native name, also known as, bio, Wikipedia credit) — a live edit. Give only what changes; null clears. The description is HTML. A field changed here leaves the Wikidata sync (hand it back with set_wikidata_ownership). To ask a reviewer instead, use propose_entry_change.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2020,7 +2178,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "title": {
             "type": "string",
@@ -2050,7 +2208,7 @@
             ]
           },
           "short": {
-            "description": "The short name in the entry’s URL; null removes it (the VHID URL stays).",
+            "description": "The short name in the URL; null removes it.",
             "anyOf": [
               {
                 "type": "string",
@@ -2062,51 +2220,51 @@
             ]
           },
           "remove_wikipedia_credit": {
-            "description": "true: remove the “from Wikipedia” credit from the description.",
+            "description": "true: remove the “from Wikipedia” credit.",
             "type": "boolean"
           },
           "credit_wikipedia_page": {
-            "description": "Credit the description “from Wikipedia”: an English Wikipedia article or draft, by title (\"Draft:Dominic McLaughlin\") or address. The server reads the page (redirects followed) and refuses it unless at least half of the description’s three-word phrases are the page’s lead (credit_text_differs, with the share).",
+            "description": "Credit the description “from Wikipedia”: an English Wikipedia article or draft, by title or address; refused unless the description is mostly the page’s lead.",
             "type": "string",
             "minLength": 1,
             "maxLength": 2000
           },
           "credit_let_wikidata_manage": {
-            "description": "With a draft named in credit_wikipedia_page: false keeps the description site-authored. By default a draft’s credit hands the description to the Wikidata sync, which leaves it alone until the draft is an article linked from the entry’s Wikidata item.",
+            "description": "With a draft in credit_wikipedia_page: false keeps the description site-authored (by default the Wikidata sync takes it).",
             "type": "boolean"
           },
           "bio": {
-            "description": "A person’s date of birth (and optionally birth name and place of birth), each with the address of a source that states it, on an entry with NO Wikidata item; null removes it. The page states it like an item’s facts: for a person only, and only while they are 18 or over. Refused on an entry with a QID, where only the item’s facts are said; linking an item later drops it.",
+            "description": "Only on an entry with NO Wikidata item: a person’s date of birth (and optionally birth name and place of birth), each with a source; null removes it. Shown only while they are 18 or over.",
             "anyOf": [
               {
                 "type": "object",
                 "properties": {
                   "birth_date": {
                     "type": "string",
-                    "description": "The date of birth at the precision the source gives: \"2004-10-21\", \"2004-10\" or \"2004\"."
+                    "description": "YYYY-MM-DD, YYYY-MM or YYYY, as the source gives it."
                   },
                   "birth_date_source": {
                     "type": "string",
                     "maxLength": 2048,
-                    "description": "The web address (http or https) of a source that states the date of birth."
+                    "description": "A source’s address that states it."
                   },
                   "birth_name": {
-                    "description": "The birth name, when the source gives one that is not the entry’s name.",
+                    "description": "If not the entry’s name.",
                     "type": "string",
                     "maxLength": 120
                   },
                   "birth_name_source": {
-                    "description": "The address of a source that states the birth name (required with it).",
+                    "description": "Required with birth_name.",
                     "type": "string",
                     "maxLength": 2048
                   },
                   "birth_place": {
-                    "description": "The place of birth, as a reader would name it (\"Austin, Texas\").",
+                    "description": "e.g. \"Austin, Texas\".",
                     "type": "string",
                     "maxLength": 200
                   },
                   "birth_place_source": {
-                    "description": "The address of a source that states the place of birth (required with it).",
+                    "description": "Required with birth_place.",
                     "type": "string",
                     "maxLength": 2048
                   }
@@ -2121,25 +2279,60 @@
               }
             ]
           },
+          "native_name": {
+            "description": "The name in its own script, shown under the title (川瀬智子 for Tomoko Kawase); \"\" or null removes it. Setting it takes it from the Wikidata sync.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "native_name_lang": {
+            "description": "Its Wikidata language code (\"ja\", \"zh-hant\").",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 35
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "also_known_as": {
+            "description": "Another name the subject is known by, said after the name in search snippets; \"\" or null removes it. Plain text, ≤100 characters.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "summary": {
-            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the public history. Never a ticket or backlog ID.",
             "type": "string",
             "minLength": 1,
             "maxLength": 200
           },
           "base_revision_id": {
-            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "description": "get_entry’s editing.baseRevisionId: a change since is refused as a conflict.",
             "type": "string",
             "pattern": "^[0-9]+$"
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -2210,7 +2403,7 @@
     {
       "name": "update_entry_handles",
       "title": "Add or remove handles",
-      "description": "Add handles to an entry, remove them, or move some to the front — a live edit. Only the handles named are sent (add_handles / remove_handles), and the server applies them to the entry’s list as it is when it saves: an added handle goes at the end, one the entry has already, or one to remove that it has not, changes nothing (the answer’s handle_ops says which), and nothing is read first, so a handle someone else saved meanwhile is never undone. `first` moves the handles it names to the front, in its order, the others keeping theirs: the tool reads the list and sends it whole, against the revision it read (a save in between is refused as a conflict; run it again), and a handle in `first` the entry has not is refused. A handle you remove that the Wikidata sync supplied is held back so the sync does not bring it back. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "description": "Add or remove handles on an entry, or move some to the front — a live edit. Only the handles named are sent, applied to the list as it is at save (an added one goes last; adding one it has, or removing one it lacks, changes nothing). `first` moves the handles it names to the front, in order. A removed handle the Wikidata sync supplied is held back from it. To ask a reviewer instead, use propose_entry_change.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2219,7 +2412,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "add": {
             "maxItems": 50,
@@ -2230,15 +2423,15 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 },
                 "display": {
-                  "description": "Text to show instead of the value.",
+                  "description": "Text shown instead of the value.",
                   "type": "string",
                   "maxLength": 200
                 }
@@ -2250,7 +2443,7 @@
             }
           },
           "remove": {
-            "description": "Handles to take off, each by its value — or, for an email this key may not see, by {platform_id: \"email\", ref}.",
+            "description": "Handles to take off, by value (an email you may not see: {platform_id: \"email\", ref}).",
             "maxItems": 50,
             "type": "array",
             "items": {
@@ -2261,12 +2454,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                      "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                     },
                     "value": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The handle as stored, e.g. \"nasa\"."
+                      "description": "The handle, e.g. \"nasa\"."
                     }
                   },
                   "required": [
@@ -2280,12 +2473,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The masked handle’s platform: \"email\"."
+                      "description": "\"email\"."
                     },
                     "ref": {
                       "type": "string",
                       "pattern": "^[0-9]{1,18}$",
-                      "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                      "description": "A masked email’s ref (get_entry’s editing.handles)."
                     }
                   },
                   "required": [
@@ -2297,7 +2490,7 @@
             }
           },
           "first": {
-            "description": "Handles to move to the front, in this order, each by its value (a masked email by its ref); the others keep their order after them. Each must be one of the entry’s handles (after add / remove); the entry then keeps its own order rather than the site’s.",
+            "description": "Handles to move to the front, in this order (the rest keep theirs); each one the entry has.",
             "minItems": 1,
             "maxItems": 50,
             "type": "array",
@@ -2309,12 +2502,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                      "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                     },
                     "value": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The handle as stored, e.g. \"nasa\"."
+                      "description": "The handle, e.g. \"nasa\"."
                     }
                   },
                   "required": [
@@ -2328,12 +2521,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The masked handle’s platform: \"email\"."
+                      "description": "\"email\"."
                     },
                     "ref": {
                       "type": "string",
                       "pattern": "^[0-9]{1,18}$",
-                      "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                      "description": "A masked email’s ref (get_entry’s editing.handles)."
                     }
                   },
                   "required": [
@@ -2345,24 +2538,23 @@
             }
           },
           "summary": {
-            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the public history. Never a ticket or backlog ID.",
             "type": "string",
             "minLength": 1,
             "maxLength": 200
           },
           "base_revision_id": {
-            "description": "Only with `first` (left out: the revision the tool reads). Without it, not sent: handles are added and removed against the entry as it is when the edit is saved.",
+            "description": "Only with `first` (default: the revision read).",
             "type": "string",
             "pattern": "^[0-9]+$"
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -2433,7 +2625,7 @@
     {
       "name": "update_entries",
       "title": "Edit many entries live",
-      "description": "Live edits to up to 25 entries in one request, each as update_entry_fields and update_entry_handles make one (the text fields, handles added and removed): a new revision each, audited with one batch id. Whether this key may edit each entry live is decided entry by entry, as for one edit (the dry run’s may_edit_live). By default each edit stands alone and the answer gives each one’s outcome; with atomic: true, any refused edit means none is made. Dry run by default: it reads each entry and lists what would change. The real run needs confirm set to the batch digest the dry run names. To ask a reviewer instead, use propose_entry_changes.",
+      "description": "Live edits to up to 25 entries in one request (text fields; handles added and removed), each naming only what changes. The real run needs confirm set to the batch digest the dry run names. To ask a reviewer instead, use propose_entry_changes.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2449,7 +2641,7 @@
                   "minLength": 1,
                   "maxLength": 200,
                   "pattern": "^(?!\\.{1,2}$)",
-                  "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+                  "description": "VHID, short name or QID."
                 },
                 "title": {
                   "type": "string",
@@ -2479,7 +2671,7 @@
                   ]
                 },
                 "short": {
-                  "description": "The short name in the entry’s URL; null removes it (the VHID URL stays).",
+                  "description": "The short name in the URL; null removes it.",
                   "anyOf": [
                     {
                       "type": "string",
@@ -2491,41 +2683,41 @@
                   ]
                 },
                 "remove_wikipedia_credit": {
-                  "description": "true: remove the “from Wikipedia” credit from the description.",
+                  "description": "true: remove the “from Wikipedia” credit.",
                   "type": "boolean"
                 },
                 "bio": {
-                  "description": "A person’s date of birth (and optionally birth name and place of birth), each with the address of a source that states it, on an entry with NO Wikidata item; null removes it. The page states it like an item’s facts: for a person only, and only while they are 18 or over. Refused on an entry with a QID, where only the item’s facts are said; linking an item later drops it.",
+                  "description": "Only on an entry with NO Wikidata item: a person’s date of birth (and optionally birth name and place of birth), each with a source; null removes it. Shown only while they are 18 or over.",
                   "anyOf": [
                     {
                       "type": "object",
                       "properties": {
                         "birth_date": {
                           "type": "string",
-                          "description": "The date of birth at the precision the source gives: \"2004-10-21\", \"2004-10\" or \"2004\"."
+                          "description": "YYYY-MM-DD, YYYY-MM or YYYY, as the source gives it."
                         },
                         "birth_date_source": {
                           "type": "string",
                           "maxLength": 2048,
-                          "description": "The web address (http or https) of a source that states the date of birth."
+                          "description": "A source’s address that states it."
                         },
                         "birth_name": {
-                          "description": "The birth name, when the source gives one that is not the entry’s name.",
+                          "description": "If not the entry’s name.",
                           "type": "string",
                           "maxLength": 120
                         },
                         "birth_name_source": {
-                          "description": "The address of a source that states the birth name (required with it).",
+                          "description": "Required with birth_name.",
                           "type": "string",
                           "maxLength": 2048
                         },
                         "birth_place": {
-                          "description": "The place of birth, as a reader would name it (\"Austin, Texas\").",
+                          "description": "e.g. \"Austin, Texas\".",
                           "type": "string",
                           "maxLength": 200
                         },
                         "birth_place_source": {
-                          "description": "The address of a source that states the place of birth (required with it).",
+                          "description": "Required with birth_place.",
                           "type": "string",
                           "maxLength": 2048
                         }
@@ -2534,6 +2726,42 @@
                         "birth_date",
                         "birth_date_source"
                       ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "native_name": {
+                  "description": "The name in its own script, shown under the title (川瀬智子 for Tomoko Kawase); \"\" or null removes it. Setting it takes it from the Wikidata sync.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "native_name_lang": {
+                  "description": "Its Wikidata language code (\"ja\", \"zh-hant\").",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 35
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "also_known_as": {
+                  "description": "Another name the subject is known by, said after the name in search snippets; \"\" or null removes it. Plain text, ≤100 characters.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
                     },
                     {
                       "type": "null"
@@ -2549,15 +2777,15 @@
                       "platform_id": {
                         "type": "string",
                         "minLength": 1,
-                        "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                        "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                       },
                       "value": {
                         "type": "string",
                         "minLength": 1,
-                        "description": "The handle as stored, e.g. \"nasa\"."
+                        "description": "The handle, e.g. \"nasa\"."
                       },
                       "display": {
-                        "description": "Text to show instead of the value.",
+                        "description": "Text shown instead of the value.",
                         "type": "string",
                         "maxLength": 200
                       }
@@ -2569,7 +2797,7 @@
                   }
                 },
                 "remove_handles": {
-                  "description": "Handles to take off, each by its value — or, for an email this key may not see, by {platform_id: \"email\", ref}.",
+                  "description": "Handles to take off, by value (an email you may not see: {platform_id: \"email\", ref}).",
                   "maxItems": 50,
                   "type": "array",
                   "items": {
@@ -2580,12 +2808,12 @@
                           "platform_id": {
                             "type": "string",
                             "minLength": 1,
-                            "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                            "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                           },
                           "value": {
                             "type": "string",
                             "minLength": 1,
-                            "description": "The handle as stored, e.g. \"nasa\"."
+                            "description": "The handle, e.g. \"nasa\"."
                           }
                         },
                         "required": [
@@ -2599,12 +2827,12 @@
                           "platform_id": {
                             "type": "string",
                             "minLength": 1,
-                            "description": "The masked handle’s platform: \"email\"."
+                            "description": "\"email\"."
                           },
                           "ref": {
                             "type": "string",
                             "pattern": "^[0-9]{1,18}$",
-                            "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                            "description": "A masked email’s ref (get_entry’s editing.handles)."
                           }
                         },
                         "required": [
@@ -2616,7 +2844,7 @@
                   }
                 },
                 "base_revision_id": {
-                  "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+                  "description": "get_entry’s editing.baseRevisionId: a change since is refused as a conflict.",
                   "type": "string",
                   "pattern": "^[0-9]+$"
                 }
@@ -2625,32 +2853,31 @@
                 "entry"
               ]
             },
-            "description": "The edits, each to a different entry."
+            "description": "Each to a different entry."
           },
           "atomic": {
             "default": false,
-            "description": "true: all or nothing — if any edit is refused, none is made (the route answers 422 naming each refused edit). false (the default): each edit on its own.",
+            "description": "true: if any edit is refused, none is made. Default: each edit on its own.",
             "type": "boolean"
           },
           "summary": {
-            "description": "Why you made these edits, in a few plain words: each edit’s summary unless it gives its own. Shown in each entry’s public history. Never an internal tracking ID; a VHID is fine.",
+            "description": "Why, in a few plain words; shown in each entry’s public history. Never an internal tracking ID; a VHID is fine.",
             "type": "string",
             "minLength": 1,
             "maxLength": 200
           },
           "confirm": {
-            "description": "Needed with dry_run: false: this change’s exact target, as the dry run gives it in `confirm`.",
+            "description": "With dry_run false: the dry run’s `confirm`.",
             "type": "string",
             "maxLength": 300
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -2721,7 +2948,7 @@
     {
       "name": "propose_entry_changes",
       "title": "Propose changes to many entries",
-      "description": "Proposals for up to 25 entries in one request, each as propose_entry_change files one (the text fields, handles added and removed) for a reviewer to decide; nothing changes until a person approves each. Audited, with one batch id. Proposing the same change again while it waits answers the same proposal, and a change to an entry where your own proposal is still waiting is added to that one (its result says `folded: true`). By default each proposal stands alone; with atomic: true, any refused one means none is filed. Dry run by default: it reads each entry and lists what would be proposed.",
+      "description": "Proposals for up to 25 entries in one request, for a reviewer to decide (text fields; handles added and removed), each naming only what changes. A change to an entry where your own proposal is waiting is folded into it.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2737,7 +2964,7 @@
                   "minLength": 1,
                   "maxLength": 200,
                   "pattern": "^(?!\\.{1,2}$)",
-                  "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+                  "description": "VHID, short name or QID."
                 },
                 "title": {
                   "type": "string",
@@ -2767,7 +2994,7 @@
                   ]
                 },
                 "short": {
-                  "description": "The short name in the entry’s URL; null removes it (the VHID URL stays).",
+                  "description": "The short name in the URL; null removes it.",
                   "anyOf": [
                     {
                       "type": "string",
@@ -2779,41 +3006,41 @@
                   ]
                 },
                 "remove_wikipedia_credit": {
-                  "description": "true: remove the “from Wikipedia” credit from the description.",
+                  "description": "true: remove the “from Wikipedia” credit.",
                   "type": "boolean"
                 },
                 "bio": {
-                  "description": "A person’s date of birth (and optionally birth name and place of birth), each with the address of a source that states it, on an entry with NO Wikidata item; null removes it. The page states it like an item’s facts: for a person only, and only while they are 18 or over. Refused on an entry with a QID, where only the item’s facts are said; linking an item later drops it.",
+                  "description": "Only on an entry with NO Wikidata item: a person’s date of birth (and optionally birth name and place of birth), each with a source; null removes it. Shown only while they are 18 or over.",
                   "anyOf": [
                     {
                       "type": "object",
                       "properties": {
                         "birth_date": {
                           "type": "string",
-                          "description": "The date of birth at the precision the source gives: \"2004-10-21\", \"2004-10\" or \"2004\"."
+                          "description": "YYYY-MM-DD, YYYY-MM or YYYY, as the source gives it."
                         },
                         "birth_date_source": {
                           "type": "string",
                           "maxLength": 2048,
-                          "description": "The web address (http or https) of a source that states the date of birth."
+                          "description": "A source’s address that states it."
                         },
                         "birth_name": {
-                          "description": "The birth name, when the source gives one that is not the entry’s name.",
+                          "description": "If not the entry’s name.",
                           "type": "string",
                           "maxLength": 120
                         },
                         "birth_name_source": {
-                          "description": "The address of a source that states the birth name (required with it).",
+                          "description": "Required with birth_name.",
                           "type": "string",
                           "maxLength": 2048
                         },
                         "birth_place": {
-                          "description": "The place of birth, as a reader would name it (\"Austin, Texas\").",
+                          "description": "e.g. \"Austin, Texas\".",
                           "type": "string",
                           "maxLength": 200
                         },
                         "birth_place_source": {
-                          "description": "The address of a source that states the place of birth (required with it).",
+                          "description": "Required with birth_place.",
                           "type": "string",
                           "maxLength": 2048
                         }
@@ -2822,6 +3049,42 @@
                         "birth_date",
                         "birth_date_source"
                       ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "native_name": {
+                  "description": "The name in its own script, shown under the title (川瀬智子 for Tomoko Kawase); \"\" or null removes it. Setting it takes it from the Wikidata sync.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "native_name_lang": {
+                  "description": "Its Wikidata language code (\"ja\", \"zh-hant\").",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 35
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "also_known_as": {
+                  "description": "Another name the subject is known by, said after the name in search snippets; \"\" or null removes it. Plain text, ≤100 characters.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
                     },
                     {
                       "type": "null"
@@ -2837,15 +3100,15 @@
                       "platform_id": {
                         "type": "string",
                         "minLength": 1,
-                        "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                        "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                       },
                       "value": {
                         "type": "string",
                         "minLength": 1,
-                        "description": "The handle as stored, e.g. \"nasa\"."
+                        "description": "The handle, e.g. \"nasa\"."
                       },
                       "display": {
-                        "description": "Text to show instead of the value.",
+                        "description": "Text shown instead of the value.",
                         "type": "string",
                         "maxLength": 200
                       }
@@ -2857,7 +3120,7 @@
                   }
                 },
                 "remove_handles": {
-                  "description": "Handles to take off, each by its value — or, for an email this key may not see, by {platform_id: \"email\", ref}.",
+                  "description": "Handles to take off, by value (an email you may not see: {platform_id: \"email\", ref}).",
                   "maxItems": 50,
                   "type": "array",
                   "items": {
@@ -2868,12 +3131,12 @@
                           "platform_id": {
                             "type": "string",
                             "minLength": 1,
-                            "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                            "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                           },
                           "value": {
                             "type": "string",
                             "minLength": 1,
-                            "description": "The handle as stored, e.g. \"nasa\"."
+                            "description": "The handle, e.g. \"nasa\"."
                           }
                         },
                         "required": [
@@ -2887,12 +3150,12 @@
                           "platform_id": {
                             "type": "string",
                             "minLength": 1,
-                            "description": "The masked handle’s platform: \"email\"."
+                            "description": "\"email\"."
                           },
                           "ref": {
                             "type": "string",
                             "pattern": "^[0-9]{1,18}$",
-                            "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                            "description": "A masked email’s ref (get_entry’s editing.handles)."
                           }
                         },
                         "required": [
@@ -2904,7 +3167,7 @@
                   }
                 },
                 "base_revision_id": {
-                  "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+                  "description": "get_entry’s editing.baseRevisionId: a change since is refused as a conflict.",
                   "type": "string",
                   "pattern": "^[0-9]+$"
                 }
@@ -2913,21 +3176,20 @@
                 "entry"
               ]
             },
-            "description": "The proposals, each to a different entry."
+            "description": "Each to a different entry."
           },
           "atomic": {
             "default": false,
-            "description": "true: all or nothing — if any edit is refused, none is made (the route answers 422 naming each refused edit). false (the default): each edit on its own.",
+            "description": "true: if any edit is refused, none is made. Default: each edit on its own.",
             "type": "boolean"
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -2998,7 +3260,7 @@
     {
       "name": "set_wikidata_ownership",
       "title": "Hand fields or handles to Wikidata, or take them back",
-      "description": "Say who manages an entry’s fields and handles. relinquish_* hands them to the Wikidata sync (the next sync refreshes them, and a relinquish queues one); takeover_* takes them back, so the sync leaves them alone. release_held_handles lets the sync add back handles that were held back after a removal. A live edit, audited. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "description": "Who manages an entry’s fields and handles: relinquish_* hands them to the Wikidata sync (which refreshes them), takeover_* takes them back; release_held_handles lets the sync re-add handles held back after a removal. A live edit. To ask a reviewer instead, use propose_entry_change.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3007,7 +3269,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "relinquish_fields": {
             "maxItems": 5,
@@ -3047,12 +3309,12 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 }
               },
               "required": [
@@ -3070,12 +3332,12 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 }
               },
               "required": [
@@ -3093,12 +3355,12 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 }
               },
               "required": [
@@ -3108,24 +3370,23 @@
             }
           },
           "summary": {
-            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the public history. Never a ticket or backlog ID.",
             "type": "string",
             "minLength": 1,
             "maxLength": 200
           },
           "base_revision_id": {
-            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "description": "get_entry’s editing.baseRevisionId: a change since is refused as a conflict.",
             "type": "string",
             "pattern": "^[0-9]+$"
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -3196,7 +3457,7 @@
     {
       "name": "set_entry_image",
       "title": "Set or clear an entry’s image",
-      "description": "Put an image on an entry — one already on the site (`media_id`, from media_catalog or get_entry) or a Wikimedia Commons file (`commons_token`, from search_commons_images) — or take the image off (`clear: true`). A new image starts with no link; `link` sets the address the image opens on the entry page instead of the full-screen viewer (`\"\"` clears it), which needs Link images. A live edit, audited. Setting the image yourself takes it from the Wikidata sync. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "description": "Set an entry’s lead image — `media_id` (an image on the site) or `commons_token` (from search_commons_images) — or take it off (`clear: true`). Takes the image from the Wikidata sync. A live edit. To ask a reviewer instead, use propose_entry_change.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3205,7 +3466,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "media_id": {
             "type": "string",
@@ -3220,29 +3481,28 @@
             "type": "boolean"
           },
           "link": {
-            "description": "An absolute https:// (or http://) address the image links to instead of opening the full-screen viewer; \"\" for no link. Needs Link images.",
+            "description": "An address the image links to instead of the viewer; \"\" for none. Needs Link images.",
             "type": "string",
             "maxLength": 2048
           },
           "summary": {
-            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the public history. Never a ticket or backlog ID.",
             "type": "string",
             "minLength": 1,
             "maxLength": 200
           },
           "base_revision_id": {
-            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "description": "get_entry’s editing.baseRevisionId: a change since is refused as a conflict.",
             "type": "string",
             "pattern": "^[0-9]+$"
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -3313,7 +3573,7 @@
     {
       "name": "set_entry_gallery",
       "title": "Set an entry’s gallery",
-      "description": "Set the images an entry shows after its lead image: the whole ordered list of media ids (from media_catalog or get_entry), replacing the gallery; [] empties it. At most 5 (6 images in all with the lead), each once, never the lead itself (set_entry_image sets that). An image taken off loses its link; `links` sets or clears the link of an image in the list (needs Link images). A live edit, audited. Dry run by default. To ask a reviewer instead, use propose_entry_change.",
+      "description": "Set the images shown after the lead image: the whole ordered list of media ids, replacing the gallery ([] empties it); at most 5, never the lead. A live edit. To ask a reviewer instead, use propose_entry_change.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3322,7 +3582,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "media_ids": {
             "maxItems": 50,
@@ -3333,7 +3593,7 @@
             }
           },
           "links": {
-            "description": "media id → the address that image links to on the entry page instead of the full-screen viewer; \"\" clears it. Images not named keep theirs. Needs Link images.",
+            "description": "media id → the address it links to; \"\" clears. Others keep theirs. Needs Link images.",
             "type": "object",
             "propertyNames": {
               "type": "string",
@@ -3345,24 +3605,23 @@
             }
           },
           "summary": {
-            "description": "Why you made this edit, in a few plain words; shown in the entry’s public history. At most 200 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the public history. Never a ticket or backlog ID.",
             "type": "string",
             "minLength": 1,
             "maxLength": 200
           },
           "base_revision_id": {
-            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "description": "get_entry’s editing.baseRevisionId: a change since is refused as a conflict.",
             "type": "string",
             "pattern": "^[0-9]+$"
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -3434,7 +3693,7 @@
     {
       "name": "propose_entry_revert",
       "title": "Propose putting an entry back to an earlier revision",
-      "description": "Propose, for a reviewer to decide, putting an entry back as it was at one of its revisions (get_entry_history: a `ref_id` like \"r123\"; imported legacy revisions cannot be put back). The proposal holds only what differs from now — title, subtitle, description, short name, handles and their order, lead image, gallery — as propose_entry_change would send it; who manages each value (Wikidata or the site) is left as it is. An image withdrawn since is left out, and the answer names it. Refused (nothing_to_change) when the entry already matches that revision. `note` tells the reviewer why. Audited. Dry run by default.",
+      "description": "Propose, for a reviewer, putting an entry back as it was at a revision (get_entry_history ref_id; not imported legacy ones). Holds only what differs from now.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3443,7 +3702,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "revision": {
             "type": "string",
@@ -3451,19 +3710,18 @@
             "description": "The revision’s ref_id, e.g. \"r123\"."
           },
           "note": {
-            "description": "Why you propose this, in plain words: posted as the proposal’s first comment, which the reviewer reads with it. At most 2,000 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the reviewer. Never a ticket or backlog ID; a VHID is fine.",
             "type": "string",
             "minLength": 1,
             "maxLength": 2000
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -3535,7 +3793,7 @@
     {
       "name": "propose_entry_change",
       "title": "Propose a change to an entry",
-      "description": "Propose a change for a reviewer to decide — for any entry you may propose to, including ones you could edit live; nothing changes until a person approves it. Give only what changes; null clears a field. On an entry with no Wikidata item, `bio` proposes a person’s date of birth (and birth name and place of birth), each with its source. `qid` proposes linking the entry to a Wikidata item, or a different one (null: unlink it), with `adopt` naming the fields the item may manage (left out: the server’s default on a first link, unchanged on a re-point); only a reviewer with Manage entries may approve that. `note` tells the reviewer why. While your own proposal on the entry is still waiting, this change is added to it rather than filed beside it: the answer names that proposal, with `folded: true`. Audited. Dry run by default: it names the entries already on the item.",
+      "description": "Propose a change for a reviewer to decide — for any entry you may propose to, including ones you could edit live; nothing changes until approved. Give only what changes (null clears a field); for handles only the ones added or removed, never the whole list (`first` moves one to the front). `qid` links the entry to a Wikidata item, re-points or (null) unlinks it. A change while your own proposal on the entry still waits is folded into it (`folded: true`).",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3544,7 +3802,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "title": {
             "type": "string",
@@ -3585,51 +3843,51 @@
             ]
           },
           "remove_wikipedia_credit": {
-            "description": "true: remove the “from Wikipedia” credit from the description.",
+            "description": "true: drop the “from Wikipedia” credit.",
             "type": "boolean"
           },
           "credit_wikipedia_page": {
-            "description": "Credit the description “from Wikipedia”: an English Wikipedia article or draft, by title (\"Draft:Dominic McLaughlin\") or address. The server reads the page (redirects followed) and refuses it unless at least half of the description’s three-word phrases are the page’s lead (credit_text_differs, with the share).",
+            "description": "Credit the description “from Wikipedia”: an English Wikipedia article or draft, by title or address; refused unless the description is mostly the page’s lead.",
             "type": "string",
             "minLength": 1,
             "maxLength": 2000
           },
           "credit_let_wikidata_manage": {
-            "description": "With a draft named in credit_wikipedia_page: false keeps the description site-authored. By default a draft’s credit hands the description to the Wikidata sync, which leaves it alone until the draft is an article linked from the entry’s Wikidata item.",
+            "description": "With a draft in credit_wikipedia_page: false keeps the description site-authored (by default the Wikidata sync takes it).",
             "type": "boolean"
           },
           "bio": {
-            "description": "A person’s date of birth (and optionally birth name and place of birth), each with the address of a source that states it, on an entry with NO Wikidata item; null removes it. The page states it like an item’s facts: for a person only, and only while they are 18 or over. Refused on an entry with a QID, where only the item’s facts are said; linking an item later drops it.",
+            "description": "Only on an entry with NO Wikidata item: a person’s date of birth (and optionally birth name and place of birth), each with a source; null removes it. Shown only while they are 18 or over.",
             "anyOf": [
               {
                 "type": "object",
                 "properties": {
                   "birth_date": {
                     "type": "string",
-                    "description": "The date of birth at the precision the source gives: \"2004-10-21\", \"2004-10\" or \"2004\"."
+                    "description": "YYYY-MM-DD, YYYY-MM or YYYY, as the source gives it."
                   },
                   "birth_date_source": {
                     "type": "string",
                     "maxLength": 2048,
-                    "description": "The web address (http or https) of a source that states the date of birth."
+                    "description": "A source’s address that states it."
                   },
                   "birth_name": {
-                    "description": "The birth name, when the source gives one that is not the entry’s name.",
+                    "description": "If not the entry’s name.",
                     "type": "string",
                     "maxLength": 120
                   },
                   "birth_name_source": {
-                    "description": "The address of a source that states the birth name (required with it).",
+                    "description": "Required with birth_name.",
                     "type": "string",
                     "maxLength": 2048
                   },
                   "birth_place": {
-                    "description": "The place of birth, as a reader would name it (\"Austin, Texas\").",
+                    "description": "e.g. \"Austin, Texas\".",
                     "type": "string",
                     "maxLength": 200
                   },
                   "birth_place_source": {
-                    "description": "The address of a source that states the place of birth (required with it).",
+                    "description": "Required with birth_place.",
                     "type": "string",
                     "maxLength": 2048
                   }
@@ -3638,6 +3896,42 @@
                   "birth_date",
                   "birth_date_source"
                 ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "native_name": {
+            "description": "The name in its own script, shown under the title (川瀬智子 for Tomoko Kawase); \"\" or null removes it. Setting it takes it from the Wikidata sync.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "native_name_lang": {
+            "description": "Its Wikidata language code (\"ja\", \"zh-hant\").",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 35
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "also_known_as": {
+            "description": "Another name the subject is known by, said after the name in search snippets; \"\" or null removes it. Plain text, ≤100 characters.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -3653,12 +3947,12 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 },
                 "display": {
                   "type": "string",
@@ -3672,7 +3966,7 @@
             }
           },
           "remove_handles": {
-            "description": "Handles to take off, each by its value — or, for an email this key may not see (value null in get_entry’s editing.handles), by {platform_id: \"email\", ref}.",
+            "description": "Handles to take off, by value (a masked email: {platform_id: \"email\", ref}).",
             "maxItems": 50,
             "type": "array",
             "items": {
@@ -3683,12 +3977,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                      "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                     },
                     "value": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The handle as stored, e.g. \"nasa\"."
+                      "description": "The handle, e.g. \"nasa\"."
                     }
                   },
                   "required": [
@@ -3702,12 +3996,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The masked handle’s platform: \"email\"."
+                      "description": "\"email\"."
                     },
                     "ref": {
                       "type": "string",
                       "pattern": "^[0-9]{1,18}$",
-                      "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                      "description": "A masked email’s ref (get_entry’s editing.handles)."
                     }
                   },
                   "required": [
@@ -3719,7 +4013,7 @@
             }
           },
           "handle_order": {
-            "description": "Every handle, in the order the entry should show them: exactly the entry’s handles after add_handles and remove_handles, each once (a masked email by its ref). To move a few to the front, use `first` instead.",
+            "description": "Every handle in the new order, each once (after add/remove). Rarely needed: to move a few to the front, use `first` instead.",
             "maxItems": 100,
             "type": "array",
             "items": {
@@ -3730,12 +4024,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                      "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                     },
                     "value": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The handle as stored, e.g. \"nasa\"."
+                      "description": "The handle, e.g. \"nasa\"."
                     }
                   },
                   "required": [
@@ -3749,12 +4043,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The masked handle’s platform: \"email\"."
+                      "description": "\"email\"."
                     },
                     "ref": {
                       "type": "string",
                       "pattern": "^[0-9]{1,18}$",
-                      "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                      "description": "A masked email’s ref (get_entry’s editing.handles)."
                     }
                   },
                   "required": [
@@ -3766,7 +4060,7 @@
             }
           },
           "first": {
-            "description": "Handles to move to the front, in this order, each by its value (a masked email by its ref); the others keep their order after them. Each must be one of the entry’s handles (after add / remove); the entry then keeps its own order rather than the site’s.",
+            "description": "Handles to move to the front, in this order (the rest keep theirs); each one the entry has.",
             "minItems": 1,
             "maxItems": 50,
             "type": "array",
@@ -3778,12 +4072,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                      "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                     },
                     "value": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The handle as stored, e.g. \"nasa\"."
+                      "description": "The handle, e.g. \"nasa\"."
                     }
                   },
                   "required": [
@@ -3797,12 +4091,12 @@
                     "platform_id": {
                       "type": "string",
                       "minLength": 1,
-                      "description": "The masked handle’s platform: \"email\"."
+                      "description": "\"email\"."
                     },
                     "ref": {
                       "type": "string",
                       "pattern": "^[0-9]{1,18}$",
-                      "description": "A masked handle’s `ref` (get_entry → editing.handles, where its value is null): it names the stored handle without its address."
+                      "description": "A masked email’s ref (get_entry’s editing.handles)."
                     }
                   },
                   "required": [
@@ -3814,22 +4108,22 @@
             }
           },
           "image_media_id": {
-            "description": "A new lead image already on the site (media_catalog, get_entry), or one you uploaded held for this proposal (upload_image or upload_image_from_url with hold: true): only its uploader may propose a held image, and the approval releases it.",
+            "description": "New lead image: one on the site, or your own upload made with hold: true.",
             "type": "string",
             "pattern": "^[0-9]{1,18}$"
           },
           "image_commons_token": {
-            "description": "A new lead image from Wikimedia Commons: a hit’s `token` from search_commons_images. The file is recorded on the site first, as the editor’s picker does.",
+            "description": "New lead image from Commons: a search_commons_images hit’s `token`.",
             "type": "string",
             "minLength": 1,
             "maxLength": 2000
           },
           "clear_image": {
-            "description": "true: take the lead image off. At most one of image_media_id, image_commons_token and clear_image.",
+            "description": "true: remove the lead image. One image arg at most.",
             "type": "boolean"
           },
           "gallery": {
-            "description": "The images after the lead: the whole ordered list of media ids, replacing the gallery; [] empties it. At most 5, each once, never the lead.",
+            "description": "The whole ordered gallery (media ids, not the lead), replacing it; [] empties it. At most 5.",
             "maxItems": 50,
             "type": "array",
             "items": {
@@ -3853,7 +4147,7 @@
             }
           },
           "takeover_fields": {
-            "description": "Fields to take back from the Wikidata sync, keeping their values.",
+            "description": "Fields to take back from the Wikidata sync.",
             "maxItems": 5,
             "type": "array",
             "items": {
@@ -3868,7 +4162,7 @@
             }
           },
           "relinquish_handles": {
-            "description": "Handles to hand to the Wikidata sync; only while Wikidata lists the value.",
+            "description": "Handles to hand to the Wikidata sync (only ones Wikidata lists).",
             "maxItems": 50,
             "type": "array",
             "items": {
@@ -3877,12 +4171,12 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 }
               },
               "required": [
@@ -3901,12 +4195,12 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 }
               },
               "required": [
@@ -3925,12 +4219,12 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 }
               },
               "required": [
@@ -3940,7 +4234,7 @@
             }
           },
           "qid": {
-            "description": "The Wikidata item to link the entry to, e.g. \"Q42\" (a different one re-points it); null unlinks it.",
+            "description": "Wikidata item to link (or re-point to); null unlinks.",
             "anyOf": [
               {
                 "type": "string",
@@ -3952,7 +4246,7 @@
             ]
           },
           "adopt": {
-            "description": "With qid: the fields the item may manage; the rest are taken back by the site.",
+            "description": "With qid: fields the item may manage.",
             "maxItems": 5,
             "type": "array",
             "items": {
@@ -3967,24 +4261,23 @@
             }
           },
           "base_revision_id": {
-            "description": "The revision you read (get_entry → editing.baseRevisionId). If the entry has changed since, the edit is refused as a conflict. Left out, the current revision is used.",
+            "description": "get_entry’s editing.baseRevisionId: a change since is refused as a conflict.",
             "type": "string",
             "pattern": "^[0-9]+$"
           },
           "note": {
-            "description": "Why you propose this, in plain words: posted as the proposal’s first comment, which the reviewer reads with it. At most 2,000 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the reviewer. Never a ticket or backlog ID; a VHID is fine.",
             "type": "string",
             "minLength": 1,
             "maxLength": 2000
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -4055,7 +4348,7 @@
     {
       "name": "propose_new_entry",
       "title": "Propose a new entry",
-      "description": "Propose a new entry for a reviewer to decide: it waits in Console → Applications under Quick proposals (list_applications with tab \"proposals\") and becomes live when approved. Refused (not_accepting) while Settings pauses new-entry requests, unless this account may create entries itself. For someone or something with no Wikidata item, leave out qid. With qid, the entry is linked to that item, and after approval Wikidata keeps up to date whatever you did not write (and any field in let_wikidata_manage). Refused, naming the entry, when one is already on the item. A merged-away QID is refused (409 qid_merged), naming the item Wikidata kept in wikidata_item: propose on that one. Sending the same proposal again within 15 minutes answers with the first one. `note` tells the reviewer why. Audited. Dry run by default: it names the entries already on the item, a short name already taken or held by a site redirect (short_is_redirect), and handles already on another entry. Related entries link themselves: when it is approved, this entry and the other new entries this account proposed within a day link each other both ways on the first plain-text mention of each title, so write names as plain text and file no follow-up to add links; the dry run lists them (related_entries, links_on_approval).",
+      "description": "Propose a new entry for a reviewer to decide. Only for a person, group, organisation, brand, show, website or software with official accounts: never a place, a law, an event or an idea (say it does not belong on Verified Handles instead). With qid it is linked to that item and Wikidata keeps unwritten fields up to date; no item: leave qid out. Refused if an entry is already on the item. Your new entries proposed within a day link each other on approval: write names as plain text, no follow-up for links.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -4069,12 +4362,12 @@
             "maxLength": 500
           },
           "description": {
-            "description": "HTML; it is sanitised when stored.",
+            "description": "HTML (sanitised).",
             "type": "string",
             "maxLength": 65536
           },
           "short": {
-            "description": "The short name, as in verifiedhandles.org/<short>. Whether it is free is checked when the proposal is approved.",
+            "description": "Short name, as in /<short>.",
             "type": "string",
             "maxLength": 100
           },
@@ -4087,12 +4380,12 @@
                 "platform_id": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The platform id, e.g. \"twitter\": one the platform catalog has (get_entry with include_platforms lists the enabled ones; platform_catalog, every one). A new handle on an unknown or disabled platform is refused (400 invalid_platform)."
+                  "description": "Catalog id: twitter (X), youtube_channel (UC… id), youtube_handle (name, no @); others in platform_catalog."
                 },
                 "value": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The handle as stored, e.g. \"nasa\"."
+                  "description": "The handle, e.g. \"nasa\"."
                 },
                 "display": {
                   "type": "string",
@@ -4106,12 +4399,12 @@
             }
           },
           "qid": {
-            "description": "The Wikidata item, e.g. \"Q42\". Leave it out for an entry with no item.",
+            "description": "The Wikidata item; leave out if none.",
             "type": "string",
             "pattern": "^[Qq][1-9][0-9]*$"
           },
           "let_wikidata_manage": {
-            "description": "With qid: fields you give that Wikidata should keep up to date after approval, as the console form does for a title it prefilled and you left as it was.",
+            "description": "With qid: fields you give that Wikidata should then manage.",
             "maxItems": 3,
             "type": "array",
             "items": {
@@ -4124,19 +4417,18 @@
             }
           },
           "note": {
-            "description": "Why you propose this, in plain words: posted as the proposal’s first comment, which the reviewer reads with it. At most 2,000 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the reviewer. Never a ticket or backlog ID; a VHID is fine.",
             "type": "string",
             "minLength": 1,
             "maxLength": 2000
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -4207,7 +4499,7 @@
     {
       "name": "report_entry",
       "title": "Report an entry",
-      "description": "Report an entry to the Verified Handles team, as its page’s “Report” form does: for a person to decide: delete, merge, image rights, wrong information. Reason `image` names the image it is about (media_id, one of the images the entry shows) and needs a note saying who owns it and what should change. Reason `image_link` is about where an image links (only for an image with a link — get_entry’s images[].link); media_id names which, else the first with one, and the report keeps the link as it is now. To delete or merge an entry, report it as `incorrect` or `other` with a note naming the entry to keep. It lands in Console → Reports. Audited. Dry run by default.",
+      "description": "Report an entry to the Verified Handles team, for a person to decide (delete, merge, image rights, wrong information). To ask for a delete or merge, use reason `incorrect` or `other` with a note naming the entry to keep. `image` names the image (media_id) and needs a note saying who owns it and what should change; `image_link` is about where an image links (get_entry’s images[].link).",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -4216,7 +4508,7 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "reason": {
             "type": "string",
@@ -4229,21 +4521,20 @@
               "image_link",
               "other"
             ],
-            "description": "impersonation: a handle here isn’t the real account; incorrect information; outdated: a handle has changed or closed; abuse or inappropriate content; image: its rights or permission; image_link: where an image links goes somewhere wrong, misleading or harmful; other."
+            "description": "impersonation: a handle isn’t the real account; incorrect information; outdated: a handle changed or closed; abuse; image: its rights; image_link: an image links somewhere wrong; other."
           },
           "note": {
-            "description": "What is wrong, for the team (at most 1000 characters). Needed for an image report.",
+            "description": "What is wrong. Needed for an image report.",
             "type": "string",
             "maxLength": 1000
           },
           "media_id": {
-            "description": "For reason `image` or `image_link`: which of the entry’s images (the dry run lists them).",
+            "description": "For `image` or `image_link`: which image (the dry run lists them).",
             "type": "string",
             "pattern": "^[0-9]{1,18}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -4315,7 +4606,7 @@
     {
       "name": "list_my_submissions",
       "title": "My own submissions",
-      "description": "This key’s own account’s submissions — proposed changes, new-entry proposals, claims, reports and applications — newest first, 25 a page: each with its status, its entry, when it was sent and decided, and the reviewer’s notes. `status: open` keeps the ones still waiting. With `id`, one submission (yours, or any a reviewer may see) with what it asks and its comment thread.",
+      "description": "Your own submissions of every kind, newest first, 25 a page, with status and reviewer notes. With `id`, one submission and its thread.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -4334,7 +4625,7 @@
             "maximum": 10000
           },
           "id": {
-            "description": "One submission’s id, from this list or from the tool that sent it.",
+            "description": "One submission.",
             "type": "string",
             "pattern": "^[0-9]{1,18}$"
           }
@@ -4657,18 +4948,17 @@
     {
       "name": "retract_my_submission",
       "title": "Retract my own submission",
-      "description": "Withdraw one of this key’s own account’s submissions while it is still open (waiting for a reviewer, or for your answer): no reviewer acts on it after, and it cannot be reopened. Only your own, whatever the key’s role. Audited. Dry run by default: it says whether the submission is yours and still open.",
+      "description": "Withdraw your own submission, only while it is still waiting (not once decided); final.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "pattern": "^[0-9]{1,18}$",
-            "description": "The submission’s id (list_my_submissions, or the tool that sent it)."
+            "description": "The submission id (list_my_submissions)."
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -4739,24 +5029,23 @@
     {
       "name": "comment_on_my_submission",
       "title": "Comment on my own submission",
-      "description": "Add a message to one of this key’s own account’s submissions (or, for a reviewer, any they may see): the reviewer reads it with the submission, and the submitter sees it on theirs. Answering a question a reviewer asked on your application sends it back to them. Audited. Dry run by default.",
+      "description": "Add a message to your own submission (a reviewer: any they may see). Answering a reviewer’s question on your application sends it back to them.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "pattern": "^[0-9]{1,18}$",
-            "description": "The submission’s id (list_my_submissions, or the tool that sent it)."
+            "description": "The submission id (list_my_submissions)."
           },
           "text": {
             "type": "string",
             "minLength": 1,
             "maxLength": 2000,
-            "description": "The message, in plain words; at most 2,000 characters."
+            "description": "The message, in plain words."
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -4828,30 +5117,29 @@
     {
       "name": "revoke_api_key",
       "title": "Revoke an API key",
-      "description": "Revoke an API key: anything using it stops working at once, and it cannot be brought back (its owner makes a new one). One of your own account’s keys, or — with `sub`, and the permission to manage users — one of another account’s. The dry run lists the account’s keys (never more than a key’s public prefix) and says if it is the key this call is made with. Audited. Dry run by default; the real run needs confirm set to the key’s id.",
+      "description": "Revoke an API key, yours or (with `sub`) another account’s; final. The dry run lists the keys. The real run needs confirm set to the key’s id.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "key_id": {
             "type": "string",
             "pattern": "^[0-9]{1,18}$",
-            "description": "The key’s id, as the dry run lists it."
+            "description": "Key id (the dry run lists them)."
           },
           "sub": {
-            "description": "Another account’s id (`sub`), to revoke one of its keys. Left out: one of your own.",
+            "description": "Another account’s; default your own.",
             "type": "string",
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)"
           },
           "confirm": {
-            "description": "Needed with dry_run: false: this change’s exact target, as the dry run gives it in `confirm`.",
+            "description": "With dry_run false: the dry run’s `confirm`.",
             "type": "string",
             "maxLength": 300
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },
@@ -4922,7 +5210,7 @@
     {
       "name": "propose_from_wikidata",
       "title": "Propose what a Wikidata item says",
-      "description": "Propose, for a reviewer to decide, what a Wikidata item says for an entry: its identifier handles, and when asked its label (as the title), its description (as the subtitle) and its image. `qid` defaults to the item the entry is linked to. For that item, unless the entry is protected or claimed, it proposes handing the values to the Wikidata sync instead of copying them (the sync then writes and keeps them up to date), and says so. For another item it copies the values, which become the site’s own: the sync will not keep them up to date. Handles the entry already has (by each platform’s own rule for letter case) are left out. The entry’s description comes from Wikipedia, not from the item, so it is only ever handed to the sync. Warns when the item is another entry’s. `note` tells the reviewer why. Audited. Dry run by default: it shows what the item has, what the entry has, and the proposal.",
+      "description": "Propose, for a reviewer, what a Wikidata item says for an entry: its handles, and if asked its label, description and image. From the linked item it hands the values to the sync (unless protected or claimed); from another item it copies them. Handles the entry has are left out.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -4931,15 +5219,15 @@
             "minLength": 1,
             "maxLength": 200,
             "pattern": "^(?!\\.{1,2}$)",
-            "description": "The entry: its VHID (11 digits), its short name (as in verifiedhandles.org/<short>), or its Wikidata QID (Q42)."
+            "description": "VHID, short name or QID."
           },
           "qid": {
-            "description": "The Wikidata item, e.g. \"Q42\". Default: the item the entry is linked to.",
+            "description": "Default: the linked item.",
             "type": "string",
             "pattern": "^[Qq][1-9][0-9]*$"
           },
           "take": {
-            "description": "What to take from the item: \"handles\" (the default), \"title\" (its label), \"subtitle\" (its description), \"description\" (only by handing it to the sync), \"image\".",
+            "description": "Default [\"handles\"]; title = its label, subtitle = its description.",
             "minItems": 1,
             "maxItems": 5,
             "type": "array",
@@ -4955,19 +5243,18 @@
             }
           },
           "note": {
-            "description": "Why you propose this, in plain words: posted as the proposal’s first comment, which the reviewer reads with it. At most 2,000 characters. Never an internal tracking ID (a backlog or ticket number); a VHID is fine.",
+            "description": "Why, in plain words, for the reviewer. Never a ticket or backlog ID; a VHID is fine.",
             "type": "string",
             "minLength": 1,
             "maxLength": 2000
           },
           "idempotency_key": {
-            "description": "Optional: a key you choose (1–255 printable ASCII, e.g. a UUID), sent as the write’s Idempotency-Key. Calling again with the same key and the same change within 24 hours answers the first call’s result (replayed: true) and writes nothing; the same key with another change is refused (422).",
+            "description": "Optional Idempotency-Key: the same key and change within 24 h replays the first result.",
             "type": "string",
             "pattern": "^[\\x20-\\x7E]{1,255}$"
           },
           "dry_run": {
             "default": true,
-            "description": "true (the default): write nothing — show the change and the exact request it would send. false: make the change.",
             "type": "boolean"
           }
         },

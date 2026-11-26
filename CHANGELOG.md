@@ -2,6 +2,71 @@
 
 The server gives its version in `serverInfo.version` when an agent connects. We only add within a major version; a change that would break a working client comes with a new one.
 
+## 1.107.0 · 26 November 2026
+
+- Changes to tools for site staff; nothing changes for public or registered keys.
+
+## 1.106.0 · 26 November 2026
+
+- Changes to tools for site staff; nothing changes for public or registered keys.
+
+## 1.105.0 · 26 November 2026
+
+- Changes to tools for site staff; nothing changes for public or registered keys.
+
+## 1.104.1 · 26 November 2026
+
+- The tools’ descriptions, and their arguments’, are much shorter: the same facts in fewer words, so the tool list takes far less of a client’s context. Where a description used to let an agent pick the wrong tool or argument, it now says which. No tool’s name, arguments or behaviour changed.
+
+## 1.104.0 · 22 November 2026
+
+- Changes to tools for site staff; nothing changes for public or registered keys.
+
+## 1.103.0 · 21 November 2026
+
+- Changes to tools for site staff; nothing changes for public or registered keys.
+
+## 1.102.0 · 21 November 2026
+
+- update_entry_fields, propose_entry_change, update_entries and propose_entry_changes take `also_known_as`: another name the subject is known by, which the entry’s search snippet says after the name, ahead of the Wikidata item’s pseudonym or English alias; "" or null removes it. Plain text, at most 100 characters: the dry run shows the value as it would be stored (`changes.also_known_as`) or refuses one with a < or > (`also_known_as_markup`) or too long (`also_known_as_too_long`). propose_entry_revert puts it back with the rest. get_entry’s editing context and the entry’s JSON carry `also_known_as`.
+
+## 1.101.0 · 21 November 2026
+
+- Changes to tools for site staff; nothing changes for public or registered keys.
+
+## 1.100.0 · 21 November 2026
+
+- Changes to tools for site staff; nothing changes for public or registered keys.
+
+## 1.99.0 · 21 November 2026
+
+- A new entry kind, `performing_group` (“performing group”, an organisation): a comedy troupe or double act, a theatre or dance company, a ballet company or a circus, which the sync gives an entry whose item is one. Every answer’s `entity_kind` may carry it; such entries were `organization`, `nonprofit` or `company`, and change as the sync next reads their items. A band, an opera company or an idol group stays a `musical_group`.
+
+## 1.98.0 · 19 November 2026
+
+- get_entry’s handles carry `display_label`: what the platform calls a handle whose value is an ID (“Artist page” on Spotify, “Author page” on Goodreads), which the entry page shows as the card’s main line with the ID under it; null for most platforms.
+
+## 1.97.0 · 19 November 2026
+
+- Changes to tools for site staff; nothing changes for public or registered keys.
+
+## 1.96.0 · 19 November 2026
+
+- find_by_handle matches a website by its site: the scheme, a leading `www.`, a trailing slash and the host’s case are ignored, so a bare domain finds an entry that lists its `https://` address with a slash (a longer path, such as `/blog`, is another page). A url that is no profile on a platform the site lists is looked up as a website, rather than refused.
+
+## 1.95.0 · 9 November 2026
+
+- Saving `bio` on an entry with no Wikidata item and no kind makes it a person, in the same revision, as its page states life facts for a person only; the dry run shows it as `changes.kind`. get_entry’s editing context carries `bioNotShown`: life facts stored on the entry that its page does not state, and why (`no_kind`, `not_person`, `under_18`, `birth_date_hidden`, `item_facts_used`), or null.
+
+## 1.94.0 · 9 November 2026
+
+- update_entry_fields, propose_entry_change, update_entries and propose_entry_changes take `native_name` and `native_name_lang`: the entry’s name in its own script, shown under its title (e.g. 川瀬智子, `ja`), and its language code; "" or null removes both. Setting it takes it from the Wikidata sync, which otherwise fills it from the item’s name in native language (P1559) when that is not the title. The dry run shows the pair as it would be stored (`changes.native_name`), or refuses a code that is not one (`invalid_native_name_lang`). get_entry’s editing context and the entry’s JSON carry `native_name` and `native_name_lang`.
+
+## 1.93.0 · 9 November 2026
+
+- An add_handles op naming a handle the entry has, with another display, now sets that handle’s Shown as in its place (handle_ops.display_set) rather than changing nothing; the handle stays whose it was, so one Wikidata lists stays on the sync. The dry runs list it under changes.display_set. A Shown as edited in a whole list no longer takes a handle off the sync either.
+- get_entry’s handles carry platform_first: the first of the entry’s accounts on its platform, which is now its main one (an editor’s pick, else Wikidata’s preferred, else the one named as the entry). Inside a platform the handles follow that order.
+
 ## 1.92.0 · 7 November 2026
 
 - update_entry_handles and propose_entry_change take `first`: the handles to move to the front of an entry’s list, in that order, each by its value (a masked email by its ref), the others keeping their order after them, so a reorder no longer needs the whole list. It can go with add and remove (add_handles and remove_handles on a proposal), which it is applied after. A handle in `first` the entry does not have is refused (`handle_not_found`), as is one named twice (`handle_repeated`), and `first` with `handle_order` (`first_or_handle_order`). update_entry_handles sends the list whole with `first`, on the revision it read, so a save in between is refused as a conflict. Dry run by default, audited as every edit.
